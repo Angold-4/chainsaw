@@ -17,11 +17,38 @@
 #include "./cf.hpp"
 
 
+int Chainsaw::parseProblems(std::string html) {
+    int foption = html.find("<option value=\"A\" >");
+    int lselect = html.find("</select>", foption);
+    std::string optblk = html.substr(foption, lselect-foption);
+
+    int count = 0;
+    size_t found = 0;
+    size_t probindex = 0;
+    size_t eindex = 0;
+    // store the name of problems
+    this->probnames = {};
+    while (true) {
+	found = optblk.find("\n", found+1);
+	if (found == std::string::npos) break;
+	probindex = optblk.find("e=", probindex+1);
+	eindex = optblk.find("\" >", probindex);
+	probindex+=3; // value="B" >
+
+	std::string pname = optblk.substr(probindex, eindex-probindex);
+	this->probnames.push_back(pname);
+	count++;
+    }
+    return count;
+}
+
+
 std::string Chainsaw::getPreBlock(std::string html) {
     int fpre = html.find("<pre>");
     int lpre = html.rfind("</pre>");
     return html.substr(fpre, lpre-fpre)+"</pre>";
 };
+
 
 int Chainsaw::parseTests(std::string preblk) {
     int ntests = 0;
@@ -56,34 +83,33 @@ int Chainsaw::parseTests(std::string preblk) {
     return ntests;
 };
 
-/*
-<pre>
-4 2
-0 1 2 3
-</pre></div><div class="output"><div class="title">Output</div><pre>
-8
-</pre></div><div class="input"><div class="title">Input</div><pre>
-3 6
-4 2 2
-</pre></div><div class="output"><div class="title">Output</div><pre>
-7
-</pre></div><div class="input"><div class="title">Input</div><pre>
-4 0
-1 1 2 2
-</pre></div><div class="output"><div class="title">Output</div><pre>
-6
-</pre>
-*/
+
+/**
+ * main() arguments:
+ * cf,  iscontest,  conn,  probn,  pwd
+ */
+int main(int argc, char* argv[]) {
+    std::string conn = argv[2]; // contestt number
+    
+    std::string conturl = "https://codeforces.com/contest/"+conn;
+    CurlObj* cocont = new CurlObj(conturl);
+    std::string conthtml = cocont->getData();
+    Chainsaw *contCs = new Chainsaw();
+    int np = contCs->parseProblems(conthtml);
+
+    for (auto c : contCs->getProb()) {
+	std::cout << c << std::endl;
+    }
 
 
-int main() {
-    // Test
+    /*
     std::string url = "https://codeforces.com/contest/1616/problem/H";
     CurlObj* co = new CurlObj(url);
     std::string html = co->getData();
-    Chainsaw* CsObject = new Chainsaw(html);
+    Chainsaw* CsObject = new Chainsaw();
     std::string preblk = CsObject->getPreBlock(html);
     std::cout << preblk << std::endl;
     CsObject->parseTests(preblk);
+    */
 }
 

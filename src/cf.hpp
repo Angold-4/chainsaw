@@ -16,6 +16,7 @@
 #pragma once
 
 #include <curl/curl.h>
+#include <vector>
 #include <fstream>
 #include <stdio.h>
 #include <string>
@@ -59,14 +60,34 @@ private:
 // Chainsaw is the class to handle cf html
 class Chainsaw {
 public:
-    Chainsaw(std::string html) : cfhtml(html) {}
+    Chainsaw() {}
+
+    /**
+     * Chainsaw::parseProblems()
+     *
+     * Get the # of problems of this specific test
+     * and then parse the prolems blk figure out all the problems name
+     * Notice that the passing parameter conthtml is the index page of contest
+     */
+    int parseProblems(std::string conthtml);
+
+
+    /**
+     * Chainsaw::getProb()
+     * 
+     * Return the vector of all problem name
+     */
+    std::vector<std::string> getProb() { return this->probnames; }
+
 
     /** 
      * Chainsaw::getPreBlock()
      * 
      * Get The <pre> </pre> Block (if have multiple then all return)
+     * Notice that probhtml is only for each problems not the contents main html
      */
-    std::string getPreBlock(std::string html);
+    std::string getPreBlock(std::string probhtml);
+
 
     /**
      * Chainsaw::parseTests()
@@ -77,8 +98,10 @@ public:
      */
     int parseTests(std::string preblk);
 
+
 private:
-    std::string cfhtml;
-    int ntestcase = 0;
+    int ntestcase;
+    int nprobcase;
+    std::vector<std::string> probnames;
 };
 
