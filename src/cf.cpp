@@ -6,13 +6,35 @@
 //
 // Identification: src/cf.cpp
 //
-//
 // Last Modified : 2022.1.4 Jiawei Wang
 //
 // Copyright (c) 2022 Angold-4
 //
 //===----------------------------------------------------------------------===//
 
+/*
+ * MIT License
+ *
+ * Copyright (c) 2022 Jiawei Wang
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+*/
 
 #include "./cf.hpp"
 
@@ -164,31 +186,6 @@ int main(int argc, char* argv[]) {
 	    std::cout << c << std::endl;
 	}
     }
-
-    /*
-    // Multithreading
-    std::vector<std::string> prbnames = contCs->getProb();
-    int nprobs = prbnames.size();
-    pthread_t threadpool[nprobs];        // thread pool
-
-    for (int i = 0; i < nprobs; i++) {
-	std::string url = conturl + "/problem/" + prbnames[i];
-	void *cfurl = static_cast<void*>(new std::string(url));
-	int result = pthread_create(&threadpool[i], NULL, curlPre, cfurl);
-	if (result != 0) std::cerr << "Error on creating thread " << i << std::endl;
-    }
-
-
-    for (int i = 0; i < nprobs; i++) {
-	// Execute threads
-	pthread_join(threadpool[i], NULL);
-    }
-
-    for (std::pair<std::string, std::string> pre : preblks) {
-	Chainsaw* CsObject = new Chainsaw();
-	CsObject->parseTests(pre.second, pre.first);
-    }
-    */
 }
 
 
