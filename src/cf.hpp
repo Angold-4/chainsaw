@@ -21,10 +21,12 @@
 #include <stdio.h>
 #include <string>
 #include <iostream>
-#include <stdlib.h>
+#include <unordered_map>
+#include <pthread.h> // multithreading
 
 
 #define CFURL "https://codeforces.com/contest/"
+
 // CurlObj is the class to handle url
 class CurlObj {
 public:
@@ -81,15 +83,6 @@ public:
     std::vector<std::string> getProb() { return this->probnames; }
 
 
-    /** 
-     * Chainsaw::getPreBlock()
-     * 
-     * Get The <pre> </pre> Block (if have multiple then all return)
-     * Notice that probhtml is only for each problems not the contents main html
-     */
-    std::string getPreBlock(std::string probhtml);
-
-
     /**
      * Chainsaw::parseTests()
      *
@@ -105,4 +98,3 @@ private:
     int nprobcase;
     std::vector<std::string> probnames;
 };
-
