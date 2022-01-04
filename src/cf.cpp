@@ -50,7 +50,7 @@ std::string Chainsaw::getPreBlock(std::string html) {
 };
 
 
-int Chainsaw::parseTests(std::string preblk) {
+int Chainsaw::parseTests(std::string preblk, std::string prob) {
     int ntests = 0;
     size_t spre = 0; // start pre
     size_t epre = 0; // end pre
@@ -67,14 +67,13 @@ int Chainsaw::parseTests(std::string preblk) {
 	    std::string test;
 	    // ofstream never create dir
 	    if (isTest) {
-		test = "input/test" + std::to_string(ntests / 2 + 1) + ".txt";
+		test = "sample/"+prob+"/input" + std::to_string(ntests / 2 + 1) + ".txt";
 		isTest = false;
 	    } else {
-		test = "input/ans" + std::to_string(ntests / 2) + ".txt";
+		test = "sample/"+prob+"/output" + std::to_string(ntests / 2) + ".txt";
 		isTest = true;
 	    } 
 	    std::ofstream testfile(test.c_str());
-	    std::cout << test << std::endl;
 	    testfile << preblk.substr(spre, epre-spre);
 	} else {
 	    throw "parse Error";
@@ -86,30 +85,32 @@ int Chainsaw::parseTests(std::string preblk) {
 
 /**
  * main() arguments:
- * cf,  iscontest,  conn,  probn,  pwd
+ * cf,  iscontest,  conn
  */
 int main(int argc, char* argv[]) {
-    std::string conn = argv[2]; // contestt number
+    std::string iscontest = argv[1]; // is contest ? 
+    std::string conn = argv[2];      // contest number
     
-    std::string conturl = "https://codeforces.com/contest/"+conn;
+    std::string conturl = CFURL + conn;
     CurlObj* cocont = new CurlObj(conturl);
     std::string conthtml = cocont->getData();
     Chainsaw *contCs = new Chainsaw();
     int np = contCs->parseProblems(conthtml);
 
-    for (auto c : contCs->getProb()) {
-	std::cout << c << std::endl;
+    if (iscontest == "1") {
+	for (auto c : contCs->getProb()) {
+	    std::cout << c << std::endl;
+	}
+    } else {
+	// Generate all sample tests
+	for (std::string s : contCs->getProb()) {
+	    std::string url = conturl + "/problem/" + s;
+	    CurlObj* co = new CurlObj(url);
+	    std::string html = co->getData();
+	    Chainsaw* CsObject = new Chainsaw();
+	    std::string preblk = CsObject->getPreBlock(html);
+	    CsObject->parseTests(preblk, s);
+	}
     }
-
-
-    /*
-    std::string url = "https://codeforces.com/contest/1616/problem/H";
-    CurlObj* co = new CurlObj(url);
-    std::string html = co->getData();
-    Chainsaw* CsObject = new Chainsaw();
-    std::string preblk = CsObject->getPreBlock(html);
-    std::cout << preblk << std::endl;
-    CsObject->parseTests(preblk);
-    */
 }
 

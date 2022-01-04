@@ -21,9 +21,10 @@
 #include <stdio.h>
 #include <string>
 #include <iostream>
+#include <stdlib.h>
 
 
-
+#define CFURL "https://codeforces.com/contest/"
 // CurlObj is the class to handle url
 class CurlObj {
 public:
@@ -96,7 +97,7 @@ public:
      * and then get # of tests
      * and write each tests to each file
      */
-    int parseTests(std::string preblk);
+    int parseTests(std::string preblk, std::string prob);
 
 
 private:

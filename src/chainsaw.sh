@@ -48,18 +48,17 @@ if [[ $# -eq 2 ]]; then
 	gen)
 	    echo '============ Chainsaw: A Codeforces Commandline Tool =============='
 	    echo ""
-	    echo "Generating all problems and its sample tests for Contest $2..."
+	    echo "Generating all problems and sample tests for Contest $2..."
 	    echo ""
 
 	    mkdir "sample"
-	    for np in `~/Library/Chainsaw/cf 1 $2 0 pwd` 
+	    for np in `~/Library/Chainsaw/cf 1 $2` 
 	    do
 		cp ~/Library/Chainsaw/Template.cpp ${np}.cpp
 		mkdir "sample/${np}"
 	    done
+	    ~/Library/Chainsaw/cf 0 $2
 	    ;;
-
-
 
     esac
 fi
