@@ -123,36 +123,25 @@ int Chainsaw::parseTests(std::string preblk, std::string prob) {
  * cf,  iscontest,  conn
  */
 int main(int argc, char* argv[]) {
-    std::string iscontest = argv[1];  // is contest ? 
-    std::string conn = argv[2];       // contest number
-    
-    // mapping problem number into its preblk
-
+    std::string conn = argv[1];       // contest number
+    std::vector<std::string> vprob = {};
     std::string conturl = CFURL + conn;
-    CurlObj* cocont = new CurlObj(conturl);
-    std::string conthtml = cocont->getData();
 
-    Chainsaw *contCs = new Chainsaw();
-    int np = contCs->parseProblems(conthtml);
-
-    if (iscontest == "1") {
-	for (auto c : contCs->getProb()) {
-	    std::cout << c << std::endl;
+    if (argc > 2) {
+	for (int i = 2; i < argc; i++) {
+	    vprob.push_back(argv[i]);
 	}
-
-    } else {
 	// Multithreading
-	std::vector<std::string> prbnames = contCs->getProb();
+	std::vector<std::string> prbnames = vprob;
 	int nprobs = prbnames.size();
 	pthread_t threadpool[nprobs];        // thread pool
-	for (int i = 0; i < nprobs; i++) {
 
+	for (int i = 0; i < nprobs; i++) {
 	    std::string url = conturl + "/problem/" + prbnames[i];
 	    void *cfurl = static_cast<void*>(new std::string(url));
 	    int result = pthread_create(&threadpool[i], NULL, curlPre, cfurl);
 	    if (result != 0) std::cerr << "Error on creating thread " << i << std::endl;
 	}
-
 
 	for (int i = 0; i < nprobs; i++) {
 	    // Execute threads
@@ -163,18 +152,56 @@ int main(int argc, char* argv[]) {
 	    Chainsaw* CsObject = new Chainsaw();
 	    CsObject->parseTests(pre.second, pre.first);
 	}
+    } else {
+	// mapping problem number into its preblk
+	CurlObj* cocont = new CurlObj(conturl);
+	std::string conthtml = cocont->getData();
 
-	/*
-	// Generate all sample tests
-	for (std::string s : contCs->getProb()) {
-	    std::string url = conturl + "/problem/" + s;
-	    CurlObj* co = new CurlObj(url);
-	    std::string html = co->getData(); // html is the preblk
+	Chainsaw *contCs = new Chainsaw();
+	int np = contCs->parseProblems(conthtml);
 
-	    Chainsaw* CsObject = new Chainsaw();
-	    CsObject->parseTests(html, s);
+	for (auto c : contCs->getProb()) {
+	    std::cout << c << std::endl;
 	}
-	*/
     }
+
+    /*
+    // Multithreading
+    std::vector<std::string> prbnames = contCs->getProb();
+    int nprobs = prbnames.size();
+    pthread_t threadpool[nprobs];        // thread pool
+
+    for (int i = 0; i < nprobs; i++) {
+	std::string url = conturl + "/problem/" + prbnames[i];
+	void *cfurl = static_cast<void*>(new std::string(url));
+	int result = pthread_create(&threadpool[i], NULL, curlPre, cfurl);
+	if (result != 0) std::cerr << "Error on creating thread " << i << std::endl;
+    }
+
+
+    for (int i = 0; i < nprobs; i++) {
+	// Execute threads
+	pthread_join(threadpool[i], NULL);
+    }
+
+    for (std::pair<std::string, std::string> pre : preblks) {
+	Chainsaw* CsObject = new Chainsaw();
+	CsObject->parseTests(pre.second, pre.first);
+    }
+    */
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

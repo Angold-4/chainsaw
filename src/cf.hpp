@@ -23,6 +23,9 @@
 #include <iostream>
 #include <unordered_map>
 #include <pthread.h> // multithreading
+#include <chrono>
+#include <thread>
+#include <filesystem>
 
 
 #define CFURL "https://codeforces.com/contest/"

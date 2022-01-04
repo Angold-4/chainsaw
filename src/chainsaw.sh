@@ -13,6 +13,8 @@
 ## =================================================================
 
 VERSION="0.1.0"
+COUNT=0
+CONS=1
 
 if [[ $# -eq 0 ]]; then
     echo '============ Chainsaw: A Codeforces Commandline Tool =============='
@@ -52,14 +54,17 @@ if [[ $# -eq 2 ]]; then
 	    echo ""
 
 	    mkdir "sample"
-	    for np in `~/Library/Chainsaw/cf 1 $2` 
+	    # 1. Create file and dir
+	    for np in `~/Library/Chainsaw/cf $2` 
 	    do
 		cp ~/Library/Chainsaw/Template.cpp ${np}.cpp
 		mkdir "sample/${np}"
+		PROBNAMES[COUNT]=$np
+		COUNT=`expr $COUNT + $CONS`
 	    done
-	    ~/Library/Chainsaw/cf 0 $2
-	    ;;
 
+	    # 2. Write test file
+	    `~/Library/Chainsaw/cf $2 "${PROBNAMES[@]}"`
     esac
 fi
 
