@@ -87,7 +87,7 @@ if [[ $# -eq 2 ]]; then
 	    # 1. Create file and dir
 	    for np in `~/Library/Chainsaw/cf $2` 
 	    do
-		cp ~/Library/Chainsaw/Template.cpp ${np}.cpp
+		cp ~/Library/Chainsaw/template.cpp ${np}.cpp
 		mkdir "sample/${np}"
 		PROBNAMES[COUNT]=$np
 		COUNT=`expr $COUNT + $CONS`
