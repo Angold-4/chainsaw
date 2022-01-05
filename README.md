@@ -1,2 +1,3 @@
-# chainsaw
-A small codeforces command line tool for competitive programming.
+#  chainsaw: A Codeforces Commandline Tool
+
+chainsaw is a very fast 

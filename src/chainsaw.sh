@@ -28,11 +28,12 @@ CONS=1
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLO='\033[1;33m'
+BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 
 if [[ $# -eq 0 ]]; then
-    echo '============ Chainsaw: A Codeforces Commandline Tool =============='
+    echo -e "============ ${YELLO}Cha${BLUE}in${RED}saw${NC}: A Codeforces Commandline Tool =============="
     echo "
     _________ .__           .__                              
     \_   ___ \|  |__ _____  |__| ____   ___________ __  _  __
@@ -43,7 +44,7 @@ if [[ $# -eq 0 ]]; then
 	"
     
     echo ""
-    echo 'Chainsaw version 0.1.0 (Linux x86-64)'
+    echo 'Chainsaw version 0.1.0 (Unix x86-64)'
     echo '"chainsaw help" list all avaliable commands'
 fi
 
@@ -77,7 +78,7 @@ fi
 if [[ $# -eq 2 ]]; then
     case "$1" in
 	gen)
-	    echo '============ Chainsaw: A Codeforces Commandline Tool =============='
+	    echo -e "============ ${Yello}Cha${RED}in${BLUE}saw${NC}: A Codeforces Commandline Tool =============="
 	    echo ""
 	    echo "Generating all problems and sample tests for Contest $2..."
 	    echo ""
@@ -111,7 +112,7 @@ if [[ $# -eq 2 ]]; then
 	    output=$(g++ -std=c++17 ${2}.cpp -o sample/$2/$2 2>&1)
 	    if [[ $? != 0 ]]; then
 		# There was an error, display the error in $output
-		echo -e "chainsaw: Compile Error"
+		echo -e "${RED}chainsaw: Compile Error${NC}"
 		exit 1
 	    fi
 
