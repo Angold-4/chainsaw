@@ -22,7 +22,7 @@ chmod 755 src/chainsaw.sh
 if [[ -e /usr/local/bin/chainsaw ]]; then 
     rm -f /usr/local/bin/chainsaw
 fi
-cp src/chainsaw.sh /usr/local/bin/chainsaw
+sudo cp src/chainsaw.sh /usr/local/bin/chainsaw
 
 
 if [[ ! -e $dir ]]; then
