@@ -13,6 +13,10 @@
 
 dir=~/Library/Chainsaw
 
+if [[ ! -e ~/Library ]]; then
+    mkdir ~/Library
+fi
+
 chmod 755 src/chainsaw.sh
 
 if [[ -e /usr/local/bin/chainsaw ]]; then 
