@@ -32,4 +32,4 @@ elif [[ ! -d $dir ]]; then
 fi
 
 clang++ -std=c++17 src/cf.cpp -o ~/Library/Chainsaw/cf -l curl
-cp src/template.cpp ~/Library/Chainsaw/
+sudo cp src/template.cpp ~/Library/Chainsaw/
