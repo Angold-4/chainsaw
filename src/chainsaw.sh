@@ -78,7 +78,7 @@ fi
 if [[ $# -eq 2 ]]; then
     case "$1" in
 	gen)
-	    echo -e "============ ${Yello}Cha${RED}in${BLUE}saw${NC}: A Codeforces Commandline Tool =============="
+	    echo -e "============ ${YELLO}Cha${RED}in${BLUE}saw${NC}: A Codeforces Commandline Tool =============="
 	    echo ""
 	    echo "Generating all problems and sample tests for Contest $2..."
 	    echo ""
