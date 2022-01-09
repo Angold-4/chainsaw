@@ -51,7 +51,7 @@ if [[ $# -eq 0 ]]; then
     echo '"chainsaw help" list all avaliable commands'
 fi
 
-# 1. Get # problems
+
 if [[ $# -eq 1 ]]; then
     case "$1" in
         version)
@@ -71,7 +71,8 @@ if [[ $# -eq 1 ]]; then
 	    echo ""
 	    echo "    gen         Generate problems and its testfile for specific contest"
 	    echo "    runsamples  run all tests for specific problem"
-	    echo "    submit      Submit specific question"
+	    echo ""
+	    echo "    submit      Submit specific problem"
 	    echo ""
 	    ;;
 	clean)
@@ -132,7 +133,7 @@ if [[ $# -eq 1 ]]; then
 	    # echo $cf_response > login.html
 	    if [[ ${cf_response} == *"Logout"* ]];
 	    then
-		# TODO: Speed up this logic
+		# TODO: Speed up this logic (Now 8s)
 		# find username
 		namearea=${cf_response#*$userkey}
 		endarea=${cf_response#*$endkey}
@@ -249,16 +250,48 @@ if [[ $# -eq 2 ]]; then
 		echo -e "${RED} ${SUCCESS}/${number} test(s) passed."
 	    fi
 	    ;;
-
-
-	submit)
-	    ;;
-
 	*)
 	    echo "chainsaw: '$1' is not a chainsaw command. See 'chainsaw help'."
 	    ;;
     esac
 fi
 
+if [[ $# -eq 3 ]]; then
+    case "$1" in
+	submit)
+	    # submit #contest #problem
 
+	    # very similar to login
 
+	    # 1. check whether login
+	    cf_response=$(curl --silent --cookie-jar ~/Library/Chainsaw/cookie.txt --cookie ~/Library/Chainsaw/cookie.txt 'https://codeforces.com/' 2>&1)
+	    if [[ ${cf_response} != *"Logout"* ]];
+	    then
+		echo -e "chainsaw: ${RED}please login first${NC}"
+		exit 1
+	    fi
+
+	    con=$2
+	    problem=$3
+	    file="${problem}.cpp"
+	    language='54' # cpp 17 default
+
+	    # 2. get the submit page (get csrf_token)
+	    cf_response=$(curl --silent --cookie-jar ~/Library/Chainsaw/cookie.txt --cookie ~/Library/Chainsaw/cookie.txt "https://codeforces.com/contest/${con}/submit" 2>&1)
+
+	    keysearch="value=\'" # TODO Maybe slow
+	    rest=${cf_response#*$keysearch} # the part of cf_response after keysearch
+
+	    CSRF=${cf_response:${#cf_response} - ${#rest}:32} # get the csrf token
+
+	    # echo "${CSRF}"
+
+	    # 3. submit file
+
+	    cf_response=`curl --location --silent --cookie-jar ~/Library/Chainsaw/cookie.txt --cookie ~/Library/Chainsaw/cookie.txt -F "csrf_token=${CSRF}" -F "action=submitSolutionFormSubmitted" -F "submittedProblemIndex=${problem}" -F "programTypeId=${language}" -F "source=@${file}" "https://codeforces.com/contest/${con}/submit?csrf_token=${CSRF}"`
+
+	    # 4. check answer
+
+	    ;;
+    esac
+fi
