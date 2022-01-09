@@ -62,13 +62,17 @@ if [[ $# -eq 1 ]]; then
 	help)
 	    echo "These are common Chainsaw commands used in various situations:"
 	    echo ""
-	    echo "    gen         Generate problems and its testfile for specific contest"
-	    echo "    runsamples  run all tests for specific problem"
-	    echo "    submit      Submit specific question"
 	    echo "    clean       Remove all testfile"
 	    echo "    version     Check the chainsaw version"
 	    echo "    help        List all valid commands"
-	    echo "    login       Login to codeforces"
+	    echo "    login       Log in codeforces"
+	    echo "    logout      Log out account"
+	    echo "    check       check your login status"
+	    echo ""
+	    echo "    gen         Generate problems and its testfile for specific contest"
+	    echo "    runsamples  run all tests for specific problem"
+	    echo "    submit      Submit specific question"
+	    echo ""
 	    ;;
 	clean)
 	    rm -rf sample
@@ -87,7 +91,7 @@ if [[ $# -eq 1 ]]; then
 
 	    CSRF=${cf_response:${#cf_response} - ${#rest}:32} # get the csrf token
 	    
-	    echo -e "${GREEN}${CSRF}"
+	    # echo -e "${GREEN}${CSRF}"
 
 	    # request="curl --location --silent --cookie-jar ${COOKIES} --cookie ${COOKIES} "
 	    # request+="--data 'action=enter&handleOrEmail=${username}&remember=1&csrf_token=${CSRF}' "
@@ -98,18 +102,48 @@ if [[ $# -eq 1 ]]; then
 	    # --data "action=enter&handleOrEmail=${username}&remember=1&csrf_token=${CSRF}&password=${password}" \
 	    # 'https://codeforces.com/enter' 2>&1)
 
-	    curl --location --silent --cookie-jar ~/Library/Chainsaw/cookie.txt --cookie ~/Library/Chainsaw/cookie.txt --data "action=enter&handleOrEmail=${username}&remember=1&csrf_token=${CSRF}&password=${password}" 'https://codeforces.com/enter/'
+	    # send login form 
+	    cf_response=$(curl --location --silent --cookie-jar ~/Library/Chainsaw/cookie.txt --cookie ~/Library/Chainsaw/cookie.txt --data "action=enter&handleOrEmail=${username}&remember=1&csrf_token=${CSRF}&password=${password}" 'https://codeforces.com/enter/' 2>&1)
 
-	    # echo -e "${BLUE}${cf_response}"
+	    if [[ ${cf_response} == *"Logout"* ]];
+	    then
+		echo -e "${GREEN}login as ${username}${NC}"
+	    else
+		echo -e "chainsaw: ${RED}wrong username/password${NC}"
+	    fi
+	    # HttpOnly_codeforces.com	FALSE	/	FALSE	0	JSESSIONID	75EE738CE75CF23750E04FA856B25475-n1
+	    # cf_response=$(curl --silent --cookie-jar ~/Library/Chainsaw/cookie.txt --cookie ~/Library/Chainsaw/cookie.txt 'https://codeforces.com/' 2>&1)
 
-	    #HttpOnly_codeforces.com	FALSE	/	FALSE	0	JSESSIONID	75EE738CE75CF23750E04FA856B25475-n1
-
-	    cf_response=$(curl --silent --cookie-jar ~/Library/Chainsaw/cookie.txt --cookie ~/Library/Chainsaw/cookie.txt 'https://codeforces.com/' 2>&1)
-
-	    echo "${cf_response}" > AngoldW.html
+	    # echo "${cf_response}" > AngoldW.html
 
 	    # --data-urlencode 'password=%s' '%s://%s/enter'", 
 	    # g:cf_cookies_file, g:cf_cookies_file, s:cf_uname, s:cf_remember, csrf_token, s:cf_passwd, s:cf_proto, s:cf_host
+	    ;;
+
+	logout)
+	    rm -f ~/Library/Chainsaw/cookie.txt
+	    echo -e "${GREEN}logout successful!${NC}"
+	    ;;
+
+	check)
+	    cf_response=$(curl --silent --cookie-jar ~/Library/Chainsaw/cookie.txt --cookie ~/Library/Chainsaw/cookie.txt 'https://codeforces.com/' 2>&1)
+	    userkey="<li><a href=\"/blog/"
+	    endkey=">Blog<"
+	    # echo $cf_response > login.html
+	    if [[ ${cf_response} == *"Logout"* ]];
+	    then
+		# TODO: Speed up this logic
+		# find username
+		namearea=${cf_response#*$userkey}
+		endarea=${cf_response#*$endkey}
+		namel=${#namearea}
+		endl=${#endarea}
+		namelen=$(expr ${namel} - ${endl})
+		namelen=$(expr ${namelen} - 7)
+		echo -e "${GREEN}login as ${cf_response:(${#cf_response} - ${namel}):$namelen}${NC}"
+	    else
+		echo -e "chainsaw: ${RED}please login first${NC}"
+	    fi
 	    ;;
 	*)
 	    echo "chainsaw: '$1' is not a chainsaw command. See 'chainsaw help'."
