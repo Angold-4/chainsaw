@@ -61,9 +61,11 @@ if [[ $# -eq 1 ]]; then
 	    echo ""
 	    echo "    gen         Generate problems and its testfile for specific contest"
 	    echo "    runsamples  run all tests for specific problem"
+	    echo "    submit      Submit specific question"
 	    echo "    clean       Remove all testfile"
 	    echo "    version     Check the chainsaw version"
 	    echo "    help        List all valid commands"
+	    echo "    login       Login to codeforces"
 	    ;;
 	clean)
 	    rm -rf sample
@@ -99,6 +101,7 @@ if [[ $# -eq 2 ]]; then
 
 	    echo ""
 	    echo "Generating successfully!"
+	    echo ""
 	    echo "Run 'chainsaw runsamples problem' to run the tests"
 	    echo ""
 	    echo '==================================================================='
@@ -173,7 +176,6 @@ if [[ $# -eq 2 ]]; then
 	    fi
     esac
 fi
-
 
 
 

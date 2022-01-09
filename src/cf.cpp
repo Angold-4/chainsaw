@@ -70,7 +70,7 @@ void *curlPre(void* url) {
     curl_easy_perform(curl);
 
     int fpre = curlBuffer.find("<pre>");
-    int lpre = curlBuffer.rfind("</pre>"); // speed up TODO
+    int lpre = curlBuffer.rfind("</pre>", fpre);
 
     int pl = URL.rfind('/'); // problem number in the last
     std::string prbname = URL.substr(pl+1, URL.size() - pl);
@@ -187,18 +187,4 @@ int main(int argc, char* argv[]) {
 	}
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
