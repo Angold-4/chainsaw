@@ -12,7 +12,10 @@
 ## =================================================================
 
 VERSION="0.1.0"
+COOKIES="~/Library/Chainsaw/cookie.txt"
 COUNT=0
+CSRF="null";
+
 SUCCESS=0;
 CONS=1
 
@@ -70,6 +73,43 @@ if [[ $# -eq 1 ]]; then
 	clean)
 	    rm -rf sample
 	    echo "clean finished!"
+	    ;;
+
+	login)
+	    # enter test logic first
+	    read -p "username: " username
+	    read -p "password: " password
+
+	    cf_response=`curl --silent --cookie-jar ~/Library/Chainsaw/cookie.txt 'https://codeforces.com/enter'`
+	    # output=$(g++ -std=c++17 ${2}.cpp -o sample/$2/$2 2>&1)
+	    keysearch="value=\'" # TODO Maybe slow
+	    rest=${cf_response#*$keysearch} # the part of cf_response after keysearch
+
+	    CSRF=${cf_response:${#cf_response} - ${#rest}:32} # get the csrf token
+	    
+	    echo -e "${GREEN}${CSRF}"
+
+	    # request="curl --location --silent --cookie-jar ${COOKIES} --cookie ${COOKIES} "
+	    # request+="--data 'action=enter&handleOrEmail=${username}&remember=1&csrf_token=${CSRF}' "
+	    # request+="--data-urlencode 'password=${password}' 'https://codeforces.com/enter'"
+
+	    # cf_response=$(curl \
+	    # --location --silent --cookie-jar ${COOKIES} --cookie ${COOKIES} \
+	    # --data "action=enter&handleOrEmail=${username}&remember=1&csrf_token=${CSRF}&password=${password}" \
+	    # 'https://codeforces.com/enter' 2>&1)
+
+	    curl --location --silent --cookie-jar ~/Library/Chainsaw/cookie.txt --cookie ~/Library/Chainsaw/cookie.txt --data "action=enter&handleOrEmail=${username}&remember=1&csrf_token=${CSRF}&password=${password}" 'https://codeforces.com/enter/'
+
+	    # echo -e "${BLUE}${cf_response}"
+
+	    #HttpOnly_codeforces.com	FALSE	/	FALSE	0	JSESSIONID	75EE738CE75CF23750E04FA856B25475-n1
+
+	    cf_response=$(curl --silent --cookie-jar ~/Library/Chainsaw/cookie.txt --cookie ~/Library/Chainsaw/cookie.txt 'https://codeforces.com/' 2>&1)
+
+	    echo "${cf_response}" > AngoldW.html
+
+	    # --data-urlencode 'password=%s' '%s://%s/enter'", 
+	    # g:cf_cookies_file, g:cf_cookies_file, s:cf_uname, s:cf_remember, csrf_token, s:cf_passwd, s:cf_proto, s:cf_host
 	    ;;
 	*)
 	    echo "chainsaw: '$1' is not a chainsaw command. See 'chainsaw help'."
@@ -174,6 +214,15 @@ if [[ $# -eq 2 ]]; then
 		echo -e "${RED}Summary: ---------------------------------------------"
 		echo -e "${RED} ${SUCCESS}/${number} test(s) passed."
 	    fi
+	    ;;
+
+
+	submit)
+	    ;;
+
+	*)
+	    echo "chainsaw: '$1' is not a chainsaw command. See 'chainsaw help'."
+	    ;;
     esac
 fi
 
