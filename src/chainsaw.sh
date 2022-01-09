@@ -128,20 +128,24 @@ if [[ $# -eq 1 ]]; then
 
 	check)
 	    cf_response=$(curl --silent --cookie-jar ~/Library/Chainsaw/cookie.txt --cookie ~/Library/Chainsaw/cookie.txt 'https://codeforces.com/' 2>&1)
-	    userkey="<li><a href=\"/blog/"
-	    endkey=">Blog<"
+	    # userkey="<li><a href=\"/blog/"
+	    # endkey=">Blog<"
 	    # echo $cf_response > login.html
 	    if [[ ${cf_response} == *"Logout"* ]];
 	    then
-		# TODO: Speed up this logic (Now 8s)
+		echo ${cf_response} > ~/Library/Chainsaw/temp.txt
 		# find username
-		namearea=${cf_response#*$userkey}
-		endarea=${cf_response#*$endkey}
-		namel=${#namearea}
-		endl=${#endarea}
-		namelen=$(expr ${namel} - ${endl})
-		namelen=$(expr ${namelen} - 7)
-		echo -e "${GREEN}login as ${cf_response:(${#cf_response} - ${namel}):$namelen}${NC}"
+		# namearea=${cf_response#*$userkey}
+		# endarea=${cf_response#*$endkey}
+		# namel=${#namearea}
+		# endl=${#endarea}
+		# namelen=$(expr ${namel} - ${endl})
+		# namelen=$(expr ${namelen} - 7)
+		# echo -e "${GREEN}login as ${cf_response:(${#cf_response} - ${namel}):$namelen}${NC}"
+		name=$(~/Library/Chainsaw/parseuser)
+		echo -e "${GREEN}log in as ${name}${NC}"
+		rm -f ~/Library/Chainsaw/temp.txt
+
 	    else
 		echo -e "chainsaw: ${RED}please login first${NC}"
 	    fi
@@ -271,6 +275,12 @@ if [[ $# -eq 3 ]]; then
 		exit 1
 	    fi
 
+	    echo ${cf_response} > ~/Library/Chainsaw/temp.txt
+	    user=$(~/Library/Chainsaw/parseuser)
+	    # echo ${user}
+
+	    rm -f ~/Library/Chainsaw/temp.txt
+
 	    con=$2
 	    problem=$3
 	    file="${problem}.cpp"
@@ -290,8 +300,10 @@ if [[ $# -eq 3 ]]; then
 
 	    cf_response=`curl --location --silent --cookie-jar ~/Library/Chainsaw/cookie.txt --cookie ~/Library/Chainsaw/cookie.txt -F "csrf_token=${CSRF}" -F "action=submitSolutionFormSubmitted" -F "submittedProblemIndex=${problem}" -F "programTypeId=${language}" -F "source=@${file}" "https://codeforces.com/contest/${con}/submit?csrf_token=${CSRF}"`
 
-	    # 4. check answer
 
+	    # 4. check answer
+	    # name=$(~/Library/Chainsaw/substring 'AngoldW.html' 2>&1)
+	    # echo -e "${GREEN}${name}"
 	    ;;
     esac
 fi
