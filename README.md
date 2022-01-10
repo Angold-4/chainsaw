@@ -1,7 +1,7 @@
-#  chainsaw: A Codeforces Commandline Tool
+#  chainsaw: A Codeforces Command Line Tool
 
-chainsaw is a small and faster drop-in replacement for your copy and paste while attending Codeforces contests. chainsaw is created for increasing 
-competitive programmer productivity by reducing run sample test time especially in real-time contests and the sites kind of lagging due to the traffic.
+chainsaw is a small and faster drop-in replacement for your copy-paste and load while attending Codeforces contests. chainsaw is created for increasing 
+competitive programmer productivity by reducing run sample test and submit time especially in real-time contests and the sites kind of lagging due to the traffic.
 
 ## Why does the speed matter?
 
@@ -35,17 +35,11 @@ By default, `chainsaw` is installed to `/usr/local/bin`
 
 ## How to use
 
+![help](docs/help.png)
+
 <details><summary>A classic way to use chainsaw</summary>
 
-1. When the contest start<br>
-run `chainsaw gen CNUMBER` (i.e. 1616) to generate all problems file and sample tests.
-
-![gen](docs/gen.gif)
-
-2. After finishing your problem<br>
-run `chainsaw runsamples PNUMBER` (i.e. H) to compile your code and check whether it is correct.
-
-![runsamples](docs/runsamples.gif)
+![chainsawshow](docs/chainsawshow.gif)
 
 </details>
 
@@ -54,11 +48,14 @@ run `chainsaw runsamples PNUMBER` (i.e. H) to compile your code and check whethe
 
 One reason is because it simply uses faster algorithms and efficient data structures. The other reason is that the sample tests generator is highly parallelized.
 
-I using `curl`, a very simple C++ Library to fetch all html files, and using `pthread` to parallize the http Request, which means you can fetch 8 problems's html file just by costing one http request time.
+I using `curl`, a very clean and simple library to fetch all html files, and using `pthread` to parallize the http Request, which means you can fetch 8 problems's html file just by costing one http request time.
 
 In my machine, the `chainsaw gen` command only costs `4` seconds for any kinds of contests in Codeforces, which is superfast.
 
 # Logo
 ![chainsaw image](docs/cslogo.png)
+
+## Credits
+* **[cfparser.vim](https://github.com/gabrielsimoes/cfparser.vim)**
 
 
