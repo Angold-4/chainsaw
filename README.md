@@ -39,7 +39,9 @@ By default, `chainsaw` is installed to `/usr/local/bin`
 
 <details><summary>A classic way to use chainsaw</summary>
 
-![chainsawshow](docs/chainsawshow.gif)
+<br>
+
+![chainsawrun](docs/chainsawrun.gif)
 
 </details>
 
@@ -57,5 +59,3 @@ In my machine, the `chainsaw gen` command only costs `4` seconds for any kinds o
 
 ## Credits
 * **[cfparser.vim](https://github.com/gabrielsimoes/cfparser.vim)**
-
-

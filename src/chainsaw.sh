@@ -314,7 +314,7 @@ if [[ $# -eq 3 ]]; then
 
 	    echo -e "${GREEN}submit successful, now get the verdict...${NC}"
 
-	    sleep 3
+	    sleep 2
 
 	    # 4. check answer
 	    # name=$(~/Library/Chainsaw/substring 'AngoldW.html' 2>&1)
