@@ -32,7 +32,7 @@ string readFileIntoString(const string& path) {
 }
 
 int main() {
-    string filename = "/Users/Angold4/Library/Chainsaw/temp.txt";
+    string filename = "/Users/Angold4/Library/Chainsaw/temp.txt"; // absolute path
 
     string html = readFileIntoString(filename);
 
@@ -41,7 +41,6 @@ int main() {
 
     int f = html.find(userkey) + 19;
     int l = html.find(endkey);
-
     cout << html.substr(f, l-f) << endl;
 }
 

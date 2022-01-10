@@ -55,7 +55,7 @@ fi
 if [[ $# -eq 1 ]]; then
     case "$1" in
         version)
-	    echo "Chainsaw 0.1.0"
+	    echo "Chainsaw 0.2.0"
 	    echo "cf       ~/Library/Chainsaw/cf"
 	    echo "chainsaw /usr/local/bin/chainsaw"
 	    ;;
@@ -65,9 +65,9 @@ if [[ $# -eq 1 ]]; then
 	    echo "    clean       Remove all testfile"
 	    echo "    version     Check the chainsaw version"
 	    echo "    help        List all valid commands"
-	    echo "    login       Log in codeforces"
+	    echo "    login       Log into codeforces"
 	    echo "    logout      Log out account"
-	    echo "    check       check your login status"
+	    echo "    check       Check your login status"
 	    echo ""
 	    echo "    gen         Generate problems and its testfile for specific contest"
 	    echo "    runsamples  run all tests for specific problem"
@@ -148,6 +148,7 @@ if [[ $# -eq 1 ]]; then
 
 	    else
 		echo -e "chainsaw: ${RED}please login first${NC}"
+		echo -e "run 'chainsaw login' to log in your account"
 	    fi
 	    ;;
 	*)
@@ -155,6 +156,7 @@ if [[ $# -eq 1 ]]; then
 	    ;;
     esac
 fi
+
 
 if [[ $# -eq 2 ]]; then
     case "$1" in
@@ -272,11 +274,13 @@ if [[ $# -eq 3 ]]; then
 	    if [[ ${cf_response} != *"Logout"* ]];
 	    then
 		echo -e "chainsaw: ${RED}please login first${NC}"
+		echo -e "run 'chainsaw login' to log in your account"
 		exit 1
 	    fi
 
 	    echo ${cf_response} > ~/Library/Chainsaw/temp.txt
 	    user=$(~/Library/Chainsaw/parseuser)
+	    echo -e "${YELLO}${user} submiting problem $3 of contest $2 ...${NC}"
 	    # echo ${user}
 
 	    rm -f ~/Library/Chainsaw/temp.txt
@@ -284,7 +288,7 @@ if [[ $# -eq 3 ]]; then
 	    con=$2
 	    problem=$3
 	    file="${problem}.cpp"
-	    language='54' # cpp 17 default
+	    language='54' # cpp 17 default TODO: Add friendly user config interface
 
 	    # 2. get the submit page (get csrf_token)
 	    cf_response=$(curl --silent --cookie-jar ~/Library/Chainsaw/cookie.txt --cookie ~/Library/Chainsaw/cookie.txt "https://codeforces.com/contest/${con}/submit" 2>&1)
@@ -297,13 +301,41 @@ if [[ $# -eq 3 ]]; then
 	    # echo "${CSRF}"
 
 	    # 3. submit file
-
 	    cf_response=`curl --location --silent --cookie-jar ~/Library/Chainsaw/cookie.txt --cookie ~/Library/Chainsaw/cookie.txt -F "csrf_token=${CSRF}" -F "action=submitSolutionFormSubmitted" -F "submittedProblemIndex=${problem}" -F "programTypeId=${language}" -F "source=@${file}" "https://codeforces.com/contest/${con}/submit?csrf_token=${CSRF}"`
 
+
+	    if [[ "${cf_response}" ==  *"You have submitted exactly the same code before"* ]]
+	    then
+		echo -e "chainsaw: ${RED}submit failed, because you have submitted exactly the same code before${NC}"
+		exit 1
+	    fi
+
+	    # echo "${cf_response}" > submit.html
+
+	    echo -e "${GREEN}submit successful, now get the verdict...${NC}"
 
 	    # 4. check answer
 	    # name=$(~/Library/Chainsaw/substring 'AngoldW.html' 2>&1)
 	    # echo -e "${GREEN}${name}"
+
+            # return verdict, contestId, index, name, passedTestCount, timeConsumedMillis, memoryConsumedBytes
+	    read verdict contestId index name passedTestCount timeConsumedMillis memoryConsumedBytes <<< `~/Library/Chainsaw/parsesubmit ${user}`
+	    if [[ "${verdict}" == "WRONG_ANSWER" ]] 
+	    then
+		COLOR=${RED};
+	    else
+		COLOR=${GREEN};
+	    fi
+
+	    echo ""
+	    echo -e "${COLOR}${contestId}${index} ${name}"
+	    echo -e "${COLOR}${verdict}"
+	    echo -e "${COLOR}Number of passed test(s): ${passedTestCount}"
+	    echo -e "${COLOR}Time consumed Mill(s): ${timeConsumedMillis}"
+	    echo -e "${COLOR}Memory consumed byte(s): ${memoryConsumedBytes}"
+	    ;;
+	*)
+	    echo "chainsaw: "$1" is not a chainsaw command. See 'chainsaw help'."
 	    ;;
     esac
 fi

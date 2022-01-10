@@ -32,6 +32,7 @@ elif [[ ! -d $dir ]]; then
 fi
 
 clang++ -std=c++17 src/cf.cpp -o ~/Library/Chainsaw/cf -l curl
+clang++ -std=c++17 src/parsesubmit.cpp -o ~/Library/Chainsaw/parsesubmit -l curl
 clang++ -std=c++17 src/parseuser.cpp -o ~/Library/Chainsaw/parseuser
 
 sudo cp src/template.cpp ~/Library/Chainsaw/
