@@ -25,10 +25,13 @@ using namespace::std;
  * return verdict, contestId, index, name, passedTestCount, timeConsumedMillis, memoryConsumedBytes
  */
 int main(int argc, char* argv[]) {
-    // string name = "AngoldW";
-    string surl = "https://codeforces.com/api/user.status?handle=AngoldW&from=1&count=1";
+    string name = argv[1];
+    string url = "https://codeforces.com/api/user.status?handle=";
+    string remain = "&from=1&count=1";
 
     // Create curl object
+
+    string surl = url + name + remain;
     CurlObj* statCurl = new CurlObj(surl);
     string shtml = statCurl->getData();
 
