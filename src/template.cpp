@@ -14,21 +14,23 @@
 #include <random>
 #include <set>
 #include <vector>
+#include <unordered_map>
+#include <unordered_set>
 using namespace std;
 
 #ifdef DEBUG
-    #define debug(args...)            {dbg, args; cerr<<endl;}
+  #define debug(args...)            {dbg, args; cerr<<endl;}
 #else
-    #define debug(args...)              // Just strip off all debug tokens
+  #define debug(args...)            // Just strip off all debug tokens
 #endif
 
 struct debugger
 {
-    template<typename T> debugger& operator , (const T& v)
-    {    
-        cerr << v << " ";    
-        return *this;    
-    }
+  template<typename T> debugger& operator , (const T& v)
+  {    
+    cerr << v << " ";    
+    return *this;    
+  }
 } dbg;
 
 void run_case() {
@@ -37,10 +39,10 @@ void run_case() {
 
 
 int main() {
-    int tests;
-    cin >> tests;
+  int tests;
+  cin >> tests;
 
-    while (tests-- > 0) 
-	run_case();
+  while (tests-- > 0) 
+    run_case();
 }
 
