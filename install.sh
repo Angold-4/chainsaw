@@ -31,8 +31,8 @@ elif [[ ! -d $dir ]]; then
     echo "$dir already exists but is not a directory" 1>&2
 fi
 
-clang++ -std=c++17 src/cf.cpp -o ~/Library/Chainsaw/cf -l curl
-clang++ -std=c++17 src/parsesubmit.cpp -o ~/Library/Chainsaw/parsesubmit -l curl
+clang++ -std=c++17 src/cf.cpp -o ~/Library/Chainsaw/cf -l curl -pthread
+clang++ -std=c++17 src/parsesubmit.cpp -o ~/Library/Chainsaw/parsesubmit -l curl -pthread
 clang++ -std=c++17 src/parseuser.cpp -o ~/Library/Chainsaw/parseuser
 
 sudo cp src/template.cpp ~/Library/Chainsaw/
