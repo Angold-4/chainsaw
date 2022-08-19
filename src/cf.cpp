@@ -5,7 +5,7 @@
 //
 // Identification: src/cf.cpp
 //
-// Last Modified : 2022.1.4 Jiawei Wang
+// Last Modified : 2022.8.20 Jiawei Wang
 //
 // Copyright (c) 2022 Angold-4
 //
@@ -77,8 +77,6 @@ void *curlPre(void* url) {
     pthread_exit(NULL);
 }
 
-
-
 int Chainsaw::parseProblems(std::string html) {
     int foption = html.find("<option value=\"A\" >");
     int lselect = html.find("</select>", foption);
@@ -95,15 +93,13 @@ int Chainsaw::parseProblems(std::string html) {
 	if (found == std::string::npos) break;
 	probindex = optblk.find("e=", probindex+1);
 	eindex = optblk.find("\" >", probindex);
-	probindex+=3; // value="B" >
-
+	probindex+=3;
 	std::string pname = optblk.substr(probindex, eindex-probindex);
 	this->probnames.push_back(pname);
 	count++;
     }
     return count;
 }
-
 
 
 int Chainsaw::parseTests(std::string preblk, std::string prob) {
@@ -123,11 +119,18 @@ int Chainsaw::parseTests(std::string preblk, std::string prob) {
 	    std::string test;
 	    // ofstream never create dir
 	    if (isTest) {
-		test = "sample/"+prob+"/input" + std::to_string(ntests / 2 + 1) + ".txt";
 		isTest = false;
+		std::string blk = preblk.substr(spre, epre-spre);
+		test = "sample/"+prob+"/input" + std::to_string(ntests / 2 + 1) + ".txt";
+		if (this->test_cases_used(blk)) {
+		  std::string ansblk = this->new_parse_tests(blk);
+		  std::ofstream testfile(test.c_str());
+		  testfile << ansblk;
+		  continue;
+		}
 	    } else {
-		test = "sample/"+prob+"/output" + std::to_string(ntests / 2) + ".txt";
 		isTest = true;
+		test = "sample/"+prob+"/output" + std::to_string(ntests / 2) + ".txt";
 	    } 
 	    std::ofstream testfile(test.c_str());
 	    testfile << preblk.substr(spre, epre-spre);
@@ -138,6 +141,29 @@ int Chainsaw::parseTests(std::string preblk, std::string prob) {
     return ntests;
 };
 
+bool Chainsaw::test_cases_used(std::string sinpreblk) {
+  if (sinpreblk.find("test-example-line") != std::string::npos) {
+    return true;
+  }
+  return false;
+}
+
+std::string Chainsaw::new_parse_tests(std::string newpreblk) {
+  std::string ret = "";
+  int start = 0;
+  int end_div = 0;
+
+  while (true) {
+    end_div = newpreblk.find("</div>", end_div+6);
+    start = newpreblk.rfind("\">", end_div);
+    if (end_div - start == 2) break;
+
+    ret += newpreblk.substr(start+2, end_div-start-2);
+    ret += '\n';
+  }
+
+  return ret;
+}
 
 /**
  * main() arguments:

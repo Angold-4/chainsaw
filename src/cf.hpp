@@ -6,8 +6,7 @@
 //
 // Identification: src/cf.hpp
 //
-//
-// Last Modified : 2022.1.4 Jiawei Wang
+// Last Modified : 2022.8.20 Jiawei Wang
 //
 // Copyright (c) 2022 Angold-4
 //
@@ -100,4 +99,7 @@ private:
     int ntestcase;
     int nprobcase;
     std::vector<std::string> probnames;
+
+    bool test_cases_used(std::string preblk);
+    std::string new_parse_tests(std::string preblk);
 };
