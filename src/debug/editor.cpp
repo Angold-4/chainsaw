@@ -1,45 +1,38 @@
 #include "debug.hpp"
 
 
-void abAppend(struct abuf *ab, const char *s, int len) {
-  char* heapn = (char*) realloc(ab->b, ab->len + len);
-  if (heapn == NULL) return;
-  memcpy(heapn+ab->len, s, len); // dst, src, len
-  ab->b = heapn;
-  ab->len += len;
-};
-
-void abFree(struct abuf *ab) {
-  free(ab->b);
-}
-
 void Editor::RefreshScreen() {
   int y;
   editRow *r;
   char buf[32];
-  struct abuf ab = ABUF_INIT;
-  abAppend(&ab, "\x1b[?25l", 6);  // Hide cursor
-  abAppend(&ab, "\x1b[H", 3);     // Go home
+  std::string buffer = "";
+
+  buffer += "\x1b[?25l"; // Hide cursor
+  buffer += "\x1b[H";    // Go home
 
   for (y = 0; y < Conf.lmtrow; y++) { // 0
     int filerow = Conf.offrow + y;
     if (filerow >= Conf.numrows) { // init case (first time call)
       if (Conf.numrows == 0 && y == Conf.lmtrow/3) { // (print welcome msg in the 1/3 pos)
+	std::cout << "Here !" << std::endl;
 	char welcome[80];
 	int welcomelen = snprintf(welcome, sizeof(welcome),
 	    "Chainsaw debug editor -- version %s\x1b[0K\r\n]", CHAINSAW_VERSION);
 	int padding = (Conf.lmtcol-welcomelen)/2;
 	if (padding) {
-	  abAppend(&ab, "~", 1);
+	  buffer += "~";
 	  padding--;
 	}
-	while (padding--) abAppend(&ab, " ", 1);
-	abAppend(&ab, welcome, welcomelen);
+	while (padding--) buffer += " ";
+	// abAppend(&ab, welcome, welcomelen);
+	buffer += *welcome;
       } else {
-	  abAppend(&ab, "~\x1b[0K\r\n", 7); // ~ (empty)
+	std::cout << "Here OK !" << std::endl;
+	buffer += "~\x1b[0K\r\n"; // ~ (empty)
       }
       continue;
     }
+
 
     r = &Conf.rows[filerow];
 
@@ -50,17 +43,19 @@ void Editor::RefreshScreen() {
       char *c = r->render + Conf.offcol; // start point
       int j;
       for (j = 0; j < len; j++) {
-	abAppend(&ab, c+j, 1);
+	buffer += *(c+j);
       }
     }
-    abAppend(&ab, "\x1b[39m", 5);
-    abAppend(&ab, "\x1b[0K", 4);
-    abAppend(&ab, "\r\n", 2);
+
+    buffer += "\x1b[39m";
+    buffer += "\x1b[0K";
+    buffer += "\r\n";
   }
 
+
   /* Create a two row status. The first row */
-  abAppend(&ab, "\x1b[0K", 4);
-  abAppend(&ab, "\x1b[7m", 4);
+  buffer += "\x1b[0K";
+  buffer += "\x1b[7m";
 
   char status[80], rstatus[80];
 
@@ -71,27 +66,29 @@ void Editor::RefreshScreen() {
       Conf.offrow + Conf.cy + 1, Conf.numrows);
 
   if (len > Conf.lmtcol) len = Conf.lmtcol;
-  abAppend(&ab, status, len);
+  buffer.push_back(*status);
 
   while (len < Conf.lmtcol) {
     if (Conf.lmtcol - len == rlen) {
-      abAppend(&ab, rstatus, rlen);
+      buffer.push_back(*rstatus);
     } else {
-      abAppend(&ab, " ", 1);
+      buffer += " ";
       len++;
     }
   }
 
-  abAppend(&ab, "\x1b[0m\r\n", 6);
+  buffer += "\x1b[0m\r\n";
 
   /* Second row depends on Conf.statusmsg and the status message update time */
-  abAppend(&ab, "\x1b[0K", 4);
+  buffer += "\x1b[0K";
   int msglen = strlen(Conf.statusmsg);
   if (msglen && time(NULL) - Conf.statusmsg_time < 5)
-    abAppend(&ab, Conf.statusmsg, msglen <= Conf.lmtcol ? msglen : Conf.lmtcol);
+    // abAppend(&ab, Conf.statusmsg, msglen <= Conf.lmtcol ? msglen : Conf.lmtcol);
+    buffer.push_back(*Conf.statusmsg);
 
 
   /* Finally, put cursor at its current position. */
+  
   int j;
   int cx = 1;
   int filerow = Conf.offrow + Conf.cy;
@@ -105,8 +102,107 @@ void Editor::RefreshScreen() {
   }
 
   snprintf(buf, sizeof(buf), "\x1b[%d; %dH", Conf.cy+1, cx);
-  abAppend(&ab, buf, strlen(buf));
-  abAppend(&ab, "\x1b[?25h", 6); // show the cursor
-  write(STDOUT_FILENO, ab.b, ab.len);
-  abFree(&ab);
+  buffer.push_back(*buf);
+  buffer += "\x1b[?25h"; // show the cursor
+  write(STDOUT_FILENO, &buffer, buffer.size());
 }
+
+/* Load the specified program in the editor memory and returns 0 on success */
+int Editor::Open(char* filename) {
+  FILE* fp;
+  Conf.dirty = 0;
+  size_t fnlen = strlen(filename) + 1;
+  Conf.filename = (char*) malloc(fnlen);
+  free(Conf.filename);
+  memcpy(Conf.filename, filename, fnlen);
+
+  fp = fopen(filename, "r");
+  if (!fp) {
+    if (errno != ENOENT) {
+      perror("Opening file");
+      exit(1);
+    }
+    return 1;
+  }
+
+  char *line = NULL;
+  size_t linecap = 0;
+  ssize_t linelen;
+
+  while ((linelen = getline(&line, &linecap, fp)) != -1) {
+    /* line by line, when meet newline (\n or \r), replace it with a terminal */
+    if (linelen && (line[linelen-1] == '\n' || line[linelen-1] == '\r')) {
+      line[--linelen] = '\0';
+    }
+    std::cout << "Insert Begin, numrows: " << Conf.numrows << std::endl;
+    InsertRow(Conf.numrows, line, linelen);
+    std::cout << "Insert End" << std::endl;
+  }
+  return 0;
+};
+
+/* Insert a row at the specified position, shifting the other rows on the bottom */
+void Editor::InsertRow(int pos, char *line, size_t len) {
+  if (pos > Conf.numrows) return;
+
+  /* reallocate rows in the heap */
+  Conf.rows = (editRow *) realloc(Conf.rows, sizeof(editRow) * (Conf.numrows+1));
+
+  if (pos != Conf.numrows) { // Do not append to the end 
+    /* Insert the row into middle, shifting other rows on the botoon */
+    memmove(Conf.rows+pos+1, Conf.rows+pos, sizeof(Conf.rows[0]) * (Conf.numrows-pos));
+    for (int j = pos+1; j <= Conf.numrows; j++) Conf.rows[j].idx++; // update the index
+  }
+
+  std::cout << "Append to the end!" << std::endl;
+  Conf.rows[pos].size = len;
+  std::cout << line << " len " << len << std::endl;
+  std::cout << "Hey0!" << std::endl;
+  Conf.rows[pos].chars = (char *) malloc(len+1);
+  std::cout << "Hey1!" << std::endl;
+  memcpy(Conf.rows[pos].chars, line, len+1);
+  std::cout << "Hey2!" << std::endl;
+  Conf.rows[pos].render = NULL; // not rendered yet
+  Conf.rows[pos].rsize = 0;
+  Conf.rows[pos].idx = pos;
+
+  UpdateRow(Conf.rows + pos);
+
+  Conf.numrows++;
+  Conf.dirty++;
+};
+
+
+/* Update the rendered version of a row (print to screen) */
+void Editor::UpdateRow(editRow* erow) {
+  unsigned int tabs = 0, nonprint = 0;
+  int j, idx;
+
+  /* Create a version of the row we can directly print on the screen,
+   * respecting tabs, substituting non-printable characters with '?' */
+
+  free(erow->render);
+  for (j = 0; j < erow->size; j++) { // for each char
+    if (erow->chars[j] == TAB) tabs++;
+  }
+  
+  unsigned long long allocsize =
+    (unsigned long long) erow->size + tabs*8 + nonprint*9 + 1;
+
+  if (allocsize > UINT32_MAX) {
+    printf("Some line of the edited debug input is too long\n");
+    exit(1);
+  }
+  erow->render = (char*) malloc(erow->size + tabs*8 + nonprint*9 + 1);
+  idx = 0;
+  for (j = 0; j < erow->size; j++) {
+    if (erow->chars[j] == TAB) {
+      erow->render[idx++] = ' ';
+      while ((idx+1) % 8 != 0) erow->render[idx++] = ' ';
+    } else {
+      erow->render[idx++] = erow->chars[j];
+    }
+  }
+  erow->rsize = idx;
+  erow->render[idx] = '\0';
+};

@@ -8,4 +8,7 @@ int main(int argc, char **argv) {
 
   Editor *editor = new Editor();
   editor->init();
+  editor->Open(argv[1]);
+  editor->EnableRawMode(STDIN_FILENO);
+  editor->RefreshScreen();
 }

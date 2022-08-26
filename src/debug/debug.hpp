@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include <sys/ioctl.h>
 #include <termios.h>
 #include <iostream>
@@ -35,18 +36,7 @@ enum KEY_ACTION{
 };
 
 
-/* We define a very simple "append buffer" structure, that is an heap
- * allocated string where we can append to. This is useful in order to
- * write all the escape sequences in a buffer and flush them to the standard
- * output in a single call, to avoid flickering effects. */
-struct abuf {
-  char *b;
-  int len;
-};
-
-#define ABUF_INIT {NULL,0}
-
-void abAppend(struct abuf *ab, const char *s, int len);
+static struct termios orig_termios; /* In order to restore at exit.*/
 
 // This structure represents a single line of the file we are editing
 struct editRow {
@@ -85,6 +75,45 @@ public:
     updateWindowSize();
   };
 
+  /* Raw mode: 1960 magic shit. */
+  int EnableRawMode(int fd) {
+    struct termios raw;
+
+    if (Conf.rawmode) return 0; /* Already enabled. */
+    if (!isatty(STDIN_FILENO)) goto fatal;
+    if (tcgetattr(fd,&orig_termios) == -1) goto fatal;
+
+    raw = orig_termios;  /* modify the original mode */
+    /* input modes: no break, no CR to NL, no parity check, no strip char,
+     * no start/stop output control. */
+    raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
+    /* output modes - disable post processing */
+    raw.c_oflag &= ~(OPOST);
+    /* control modes - set 8 bit chars */
+    raw.c_cflag |= (CS8);
+    /* local modes - choing off, canonical off, no extended functions,
+     * no signal chars (^Z,^C) */
+    raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
+    /* control chars - set return condition: min number of bytes and timer. */
+    raw.c_cc[VMIN] = 0; /* Return each byte, or zero for timeout. */
+    raw.c_cc[VTIME] = 1; /* 100 ms timeout (unit is tens of second). */
+
+    /* put terminal in raw mode after flushing */
+    if (tcsetattr(fd,TCSAFLUSH,&raw) < 0) goto fatal;
+    Conf.rawmode = 1;
+    return 0;
+
+  fatal:
+    errno = ENOTTY;
+    return -1;
+  }
+
+  int Open(char *filename);
+
+  void InsertRow(int at, char* line, size_t len);
+
+  void UpdateRow(editRow* erow);
+
 private:
   struct editorConfig Conf;
 
@@ -116,5 +145,8 @@ private:
       *rows = ws.ws_row;
       return 0;
     }
-  }
+  };
+
+  /* Low-level terminal handling */
+
 };
