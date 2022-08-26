@@ -1,6 +1,5 @@
 #include "debug.hpp"
 
-
 void Editor::RefreshScreen() {
   int y;
   editRow *r;
@@ -14,7 +13,6 @@ void Editor::RefreshScreen() {
     int filerow = Conf.offrow + y;
     if (filerow >= Conf.numrows) { // init case (first time call)
       if (Conf.numrows == 0 && y == Conf.lmtrow/3) { // (print welcome msg in the 1/3 pos)
-	std::cout << "Here !" << std::endl;
 	char welcome[80];
 	int welcomelen = snprintf(welcome, sizeof(welcome),
 	    "Chainsaw debug editor -- version %s\x1b[0K\r\n]", CHAINSAW_VERSION);
@@ -27,12 +25,10 @@ void Editor::RefreshScreen() {
 	// abAppend(&ab, welcome, welcomelen);
 	buffer += *welcome;
       } else {
-	std::cout << "Here OK !" << std::endl;
 	buffer += "~\x1b[0K\r\n"; // ~ (empty)
       }
       continue;
     }
-
 
     r = &Conf.rows[filerow];
 
@@ -112,8 +108,8 @@ int Editor::Open(char* filename) {
   FILE* fp;
   Conf.dirty = 0;
   size_t fnlen = strlen(filename) + 1;
-  Conf.filename = (char*) malloc(fnlen);
-  free(Conf.filename);
+  Conf.filename = new char[fnlen];
+  delete[] Conf.filename;
   memcpy(Conf.filename, filename, fnlen);
 
   fp = fopen(filename, "r");
@@ -134,9 +130,7 @@ int Editor::Open(char* filename) {
     if (linelen && (line[linelen-1] == '\n' || line[linelen-1] == '\r')) {
       line[--linelen] = '\0';
     }
-    std::cout << "Insert Begin, numrows: " << Conf.numrows << std::endl;
     InsertRow(Conf.numrows, line, linelen);
-    std::cout << "Insert End" << std::endl;
   }
   return 0;
 };
@@ -154,14 +148,9 @@ void Editor::InsertRow(int pos, char *line, size_t len) {
     for (int j = pos+1; j <= Conf.numrows; j++) Conf.rows[j].idx++; // update the index
   }
 
-  std::cout << "Append to the end!" << std::endl;
   Conf.rows[pos].size = len;
-  std::cout << line << " len " << len << std::endl;
-  std::cout << "Hey0!" << std::endl;
-  Conf.rows[pos].chars = (char *) malloc(len+1);
-  std::cout << "Hey1!" << std::endl;
+  Conf.rows[pos].chars = new char[len];
   memcpy(Conf.rows[pos].chars, line, len+1);
-  std::cout << "Hey2!" << std::endl;
   Conf.rows[pos].render = NULL; // not rendered yet
   Conf.rows[pos].rsize = 0;
   Conf.rows[pos].idx = pos;
@@ -181,7 +170,7 @@ void Editor::UpdateRow(editRow* erow) {
   /* Create a version of the row we can directly print on the screen,
    * respecting tabs, substituting non-printable characters with '?' */
 
-  free(erow->render);
+  delete[] erow->render;
   for (j = 0; j < erow->size; j++) { // for each char
     if (erow->chars[j] == TAB) tabs++;
   }
@@ -193,7 +182,8 @@ void Editor::UpdateRow(editRow* erow) {
     printf("Some line of the edited debug input is too long\n");
     exit(1);
   }
-  erow->render = (char*) malloc(erow->size + tabs*8 + nonprint*9 + 1);
+
+  erow->render = new char[allocsize];
   idx = 0;
   for (j = 0; j < erow->size; j++) {
     if (erow->chars[j] == TAB) {
@@ -205,4 +195,5 @@ void Editor::UpdateRow(editRow* erow) {
   }
   erow->rsize = idx;
   erow->render[idx] = '\0';
+  std::cout << erow->render << std::endl;
 };
