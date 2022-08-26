@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <cstring>
 #include <stdlib.h>
 #include <sys/ioctl.h>
 #include <termios.h>

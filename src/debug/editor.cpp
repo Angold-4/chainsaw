@@ -100,7 +100,7 @@ void Editor::RefreshScreen() {
   snprintf(buf, sizeof(buf), "\x1b[%d; %dH", Conf.cy+1, cx);
   buffer.push_back(*buf);
   buffer += "\x1b[?25h"; // show the cursor
-  write(STDOUT_FILENO, &buffer, buffer.size());
+  std::cout << buffer << std::endl;
 }
 
 /* Load the specified program in the editor memory and returns 0 on success */
@@ -109,7 +109,6 @@ int Editor::Open(char* filename) {
   Conf.dirty = 0;
   size_t fnlen = strlen(filename) + 1;
   Conf.filename = new char[fnlen];
-  delete[] Conf.filename;
   memcpy(Conf.filename, filename, fnlen);
 
   fp = fopen(filename, "r");
@@ -195,5 +194,4 @@ void Editor::UpdateRow(editRow* erow) {
   }
   erow->rsize = idx;
   erow->render[idx] = '\0';
-  std::cout << erow->render << std::endl;
 };
