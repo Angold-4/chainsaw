@@ -10,7 +10,9 @@ int main(int argc, char **argv) {
   editor->init();
   editor->Open(argv[1]);
   editor->EnableRawMode(STDIN_FILENO);
+  // editor->SetStatusMessage( "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find");
   while (1) {
     editor->RefreshScreen();
+    editor->ProcessKeypress(STDIN_FILENO);
   }
 }

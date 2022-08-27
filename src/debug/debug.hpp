@@ -1,4 +1,5 @@
 #define CHAINSAW_VERSION "0.3.0"
+#define QUIT_TIMES 3
 
 #include <stdio.h>
 #include <unistd.h>
@@ -8,6 +9,7 @@
 #include <termios.h>
 #include <iostream>
 #include <time.h>
+#include <fcntl.h>
 
 enum KEY_ACTION{
   KEY_NULL = 0,       /* NULL */
@@ -35,7 +37,6 @@ enum KEY_ACTION{
   PAGE_UP,
   PAGE_DOWN
 };
-
 
 static struct termios orig_termios; /* In order to restore at exit.*/
 
@@ -67,7 +68,7 @@ public:
   void RefreshScreen();
 
   void init() {
-    Conf.cx = Conf.cy = 0;
+    Conf.cx = Conf.cy = 1;
     Conf.offrow = Conf.offrow = 0;
     Conf.numrows = 0;
     Conf.rows = NULL;
@@ -115,6 +116,22 @@ public:
 
   void UpdateRow(editRow* erow);
 
+  void ProcessKeypress(int fd);
+
+  int ReadKey(int fd);
+
+  void SetStatusMessage(const char *fmt, ...);
+
+  char* RowsToString(int *buflen);
+
+protected:
+  void insertNewline();
+  int save();
+  void rowAppendString(editRow* erow, char *s, size_t len);
+  void delChar();
+  void delRow(int at);
+  void rowDelChar(editRow* erow, int at);
+
 private:
   struct editorConfig Conf;
 
@@ -147,4 +164,11 @@ private:
       return 0;
     }
   };
+
+  /* Free row's heap allocated stuff. */
+  void freeRow(editRow *row) {
+    std::free(row->render);
+    std::free(row->chars);
+  }
+
 };
