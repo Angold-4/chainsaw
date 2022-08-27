@@ -53,6 +53,7 @@ void Editor::RefreshScreen() {
   buffer += "\x1b[0K";
   buffer += "\x1b[7m";
 
+
   char status[80], rstatus[80];
 
   int len = snprintf(status, sizeof(status), "%.20s - %d lines %s",
@@ -62,11 +63,14 @@ void Editor::RefreshScreen() {
       Conf.offrow + Conf.cy + 1, Conf.numrows);
 
   if (len > Conf.lmtcol) len = Conf.lmtcol;
-  buffer.push_back(*status);
+
+  std::string ss(status); std::string rs(rstatus);
+  buffer += ss;
 
   while (len < Conf.lmtcol) {
     if (Conf.lmtcol - len == rlen) {
-      buffer.push_back(*rstatus);
+      buffer += rs;
+      break;
     } else {
       buffer += " ";
       len++;
@@ -97,8 +101,9 @@ void Editor::RefreshScreen() {
     }
   }
 
-  snprintf(buf, sizeof(buf), "\x1b[%d; %dH", Conf.cy+1, cx);
-  buffer.push_back(*buf);
+  snprintf(buf, sizeof(buf), "\x1b[%d;%dH", Conf.cy+1, cx);
+  std::string sbuf(buf);
+  buffer += sbuf;
   buffer += "\x1b[?25h"; // show the cursor
   std::cout << buffer << std::endl;
 }

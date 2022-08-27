@@ -10,5 +10,7 @@ int main(int argc, char **argv) {
   editor->init();
   editor->Open(argv[1]);
   editor->EnableRawMode(STDIN_FILENO);
-  editor->RefreshScreen();
+  while (1) {
+    editor->RefreshScreen();
+  }
 }

@@ -147,7 +147,4 @@ private:
       return 0;
     }
   };
-
-  /* Low-level terminal handling */
-
 };
