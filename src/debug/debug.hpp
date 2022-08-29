@@ -1,6 +1,7 @@
 #define CHAINSAW_VERSION "0.3.0"
 #define QUIT_TIMES 3
 
+#include <termios.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <cstring>
@@ -124,6 +125,10 @@ public:
 
   char* RowsToString(int *buflen);
 
+  void MoveCursor(int key);
+
+  void InsertChar(int c);
+
 protected:
   void insertNewline();
   int save();
@@ -131,6 +136,7 @@ protected:
   void delChar();
   void delRow(int at);
   void rowDelChar(editRow* erow, int at);
+  void rowInsertChar(editRow *row, int pos, int c);
 
 private:
   struct editorConfig Conf;
