@@ -69,7 +69,8 @@ public:
   void RefreshScreen();
 
   void init() {
-    Conf.cx = Conf.cy = 1;
+    Conf.cx = 0;
+    Conf.cy = 0;
     Conf.offrow = Conf.offrow = 0;
     Conf.numrows = 0;
     Conf.rows = NULL;
@@ -176,5 +177,4 @@ private:
     std::free(row->render);
     std::free(row->chars);
   }
-
 };

@@ -102,7 +102,7 @@ void Editor::RefreshScreen() {
     }
   }
 
-  snprintf(buf, sizeof(buf), "\x1b[%d;%dH", Conf.cy+1, cx);
+  snprintf(buf, sizeof(buf), "\x1b[%d;%dH", Conf.cy, cx); // set the position of the cursor
   std::string sbuf(buf);
   buffer += sbuf;
   buffer += "\x1b[?25h"; // show the cursor
@@ -163,7 +163,7 @@ void Editor::InsertRow(int pos, char *line, size_t len) {
   UpdateRow(Conf.rows + pos);
 
   Conf.numrows++;
-  Conf.dirty++;
+  // Conf.dirty++;
 };
 
 
@@ -228,10 +228,11 @@ void Editor::ProcessKeypress(int fd) {
       break;
     case CTRL_Q:    /* Ctrl-q */
       /* Quit if the file was already saved, or we want it to quit directly */
-      if (Conf.dirty && quit_times) {
+      if (this->Conf.dirty && quit_times) {
 	SetStatusMessage("WARNING!!! FILE has unsaved changes." 
 	    "Press Ctrl-Q %d more times to quit.", quit_times);
 	quit_times--;
+	return;
       }
       exit(0);
       break;
@@ -331,8 +332,8 @@ char* Editor::RowsToString(int *buflen) {
   return buf; // buf is the start of the buffer
 };
 
-/* Performing keypress actions */
 
+/* Performing keypress actions */
 
 /* Insert a character at specific position in a row, moving the 
  * remaining chars on the right if needed */
@@ -367,6 +368,13 @@ void Editor::InsertChar(int c) {
 
   row = &Conf.rows[filerow];
   rowInsertChar(row, filecol, c);
+
+  if (Conf.cx == Conf.lmtcol-1) {
+    Conf.offcol++;
+  } else {
+    Conf.cx++;
+  }
+  Conf.dirty++;
 };
 
 /* Inserting a newline is slightly complex as we have to handling inserting a 

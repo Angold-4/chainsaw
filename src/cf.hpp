@@ -6,7 +6,7 @@
 //
 // Identification: src/cf.hpp
 //
-// Last Modified : 2022.8.20 Jiawei Wang
+// Last Modified : 2022.8.24 Jiawei Wang
 //
 // Copyright (c) 2022 Angold-4
 //
@@ -25,7 +25,6 @@
 #include <chrono>
 #include <thread>
 #include <filesystem>
-
 
 #define CFURL "https://codeforces.com/contest/"
 
