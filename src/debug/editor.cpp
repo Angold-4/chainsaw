@@ -121,6 +121,7 @@ int Editor::Open(char* filename) {
   if (!fp) {
     if (errno != ENOENT) {
       perror("Opening file");
+      std::system("clear");
       exit(1);
     }
     return 1;
@@ -185,6 +186,7 @@ void Editor::UpdateRow(editRow* erow) {
 
   if (allocsize > UINT32_MAX) {
     printf("Some line of the edited debug input is too long\n");
+    std::system("clear");
     exit(1);
   }
 
@@ -234,6 +236,7 @@ void Editor::ProcessKeypress(int fd) {
 	quit_times--;
 	return;
       }
+      std::system("clear");
       exit(0);
       break;
     case CTRL_S:    /* Ctrl-s */

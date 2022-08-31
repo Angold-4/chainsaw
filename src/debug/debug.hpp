@@ -2,6 +2,7 @@
 #define QUIT_TIMES 3
 
 #include <termios.h>
+#include <cstdlib>
 #include <stdio.h>
 #include <stdarg.h>
 #include <unistd.h>
@@ -146,6 +147,7 @@ private:
   void updateWindowSize() {
     if (getWindowSize(STDIN_FILENO, STDOUT_FILENO, &Conf.lmtrow, &Conf.lmtcol)) {
       perror("Unable to query the scrren for size (ioctl failed))");
+      std::system("clear");
       exit(1);
     }
     Conf.lmtrow /= 2; // Get room for the interpreter (inter)
