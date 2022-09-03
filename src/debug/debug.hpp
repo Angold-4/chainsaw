@@ -16,11 +16,13 @@
 
 enum KEY_ACTION{
   KEY_NULL = 0,       /* NULL */
-  CTRL_C = 3,         /* Ctrl-c */
-  CTRL_D = 4,         /* Ctrl-d */
+  CTRL_C = 3,         /* Ctrl-c for command */
+  CTRL_D = 4,         /* Ctrl-d for edit */
   CTRL_F = 6,         /* Ctrl-f */
   CTRL_H = 8,         /* Ctrl-h */
-  TAB = 9,            /* Tab */
+  TAB = 9,            /* Tab (Ctrl-i) */
+  CTRL_J = 10,        /* Ctrl-j */
+  CTRL_K = 11,        /* Ctrl-k */
   CTRL_L = 12,        /* Ctrl+l */
   ENTER = 13,         /* Enter */
   CTRL_Q = 17,        /* Ctrl-q */
@@ -62,6 +64,8 @@ struct editorConfig {
   int dirty;          // File modified but not saved
   char *filename;     // Currently open filename
   char statusmsg[80]; // Msg want to show to the user
+  std::string command;   // User input Command-line msg
+  bool commandst;        // Whether we are in the command status
   time_t statusmsg_time;
 };
 
@@ -78,6 +82,8 @@ public:
     Conf.rows = NULL;
     Conf.dirty = 0;
     Conf.filename = NULL;
+    Conf.command = "";
+    Conf.commandst = false;
     updateWindowSize();
   };
 
@@ -132,6 +138,8 @@ public:
 
   void InsertChar(int c);
 
+  void InsertCommand(int c);
+
 protected:
   void insertNewline();
   int save();
@@ -140,6 +148,7 @@ protected:
   void delRow(int at);
   void rowDelChar(editRow* erow, int at);
   void rowInsertChar(editRow *row, int pos, int c);
+  void commandPrompt();
 
 private:
   struct editorConfig Conf;

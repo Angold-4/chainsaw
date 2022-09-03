@@ -89,6 +89,12 @@ void Editor::RefreshScreen() {
     buffer += sstatusmsg;
   }
 
+  /* Chainsaw Debug Command */
+  if (Conf.commandst) {
+    /* We are in the command mode */
+    buffer += Conf.command;
+  }
+
   /* Finally, put cursor at its current position. */
   int j;
   int cx = 1;
@@ -222,11 +228,25 @@ void Editor::ProcessKeypress(int fd) {
   int c = ReadKey(fd);
 
   switch(c) {
-    case ENTER:     /* Enter */
-      this->insertNewline();
+    case ENTER:     /* Enter or Exec */
+      if (Conf.commandst) {
+	/* TODO: Implement the executer */
+	break;
+      }
+      insertNewline();
       break;
     case CTRL_C:    /* Ctrl-c */
-      /* We just ignore ctrl-c, since it can be so simple to lose the changes */
+      /* Entering the command mode, if we already in, then do nothing */
+      if (!Conf.commandst) {
+	commandPrompt();
+      }
+      break;
+    case CTRL_D:    /* Ctrl-d */
+      /* Quit the command mode, if we already out, then do nothing */
+      if (Conf.commandst) {
+	Conf.command = "";
+	Conf.commandst = false;
+      }
       break;
     case CTRL_Q:    /* Ctrl-q */
       /* Quit if the file was already saved, or we want it to quit directly */
@@ -243,18 +263,22 @@ void Editor::ProcessKeypress(int fd) {
       save();
       break;
     case BACKSPACE:
-    case CTRL_H:
     case DEL_KEY:
       delChar();
       break;
     case ARROW_UP:
+    case CTRL_J:
     case ARROW_DOWN:
+    case CTRL_K:
     case ARROW_LEFT:
+    case CTRL_H:
     case ARROW_RIGHT:
+    case CTRL_L:
       MoveCursor(c);
       break;
     default:
-      InsertChar(c);
+      if (Conf.commandst) InsertCommand(c);
+      else InsertChar(c);
       break;
   }
 
@@ -381,7 +405,7 @@ void Editor::InsertChar(int c) {
 };
 
 /* Inserting a newline is slightly complex as we have to handling inserting a 
- * newline in the middle of a line */
+ * newline at the middle of a line */
 void Editor::insertNewline() {
   int filerow = Conf.offrow + Conf.cy;
   int filecol = Conf.offcol + Conf.cx;
@@ -453,6 +477,7 @@ void Editor::MoveCursor(int key) {
 
   switch(key) {
     case ARROW_LEFT:
+    case CTRL_H:
       if (Conf.cx == 0) {  // end of the line
 	if (Conf.offcol) {
 	  Conf.offcol--;
@@ -471,6 +496,7 @@ void Editor::MoveCursor(int key) {
       }
       break;
     case ARROW_RIGHT:
+    case CTRL_L:
       if (row && filecol < row->size) {
 	if (Conf.cx == Conf.lmtcol-1) { // cannot move
 	  Conf.offcol++;
@@ -488,6 +514,7 @@ void Editor::MoveCursor(int key) {
       }
       break;
     case ARROW_UP:
+    case CTRL_K:
       if (Conf.cy == 0) {
 	if (Conf.offrow) Conf.offrow--;
       } else {
@@ -495,6 +522,7 @@ void Editor::MoveCursor(int key) {
       }
       break;
     case ARROW_DOWN:
+    case CTRL_J:
       if (filerow < Conf.numrows) {
 	if (Conf.cy == Conf.lmtrow-1) {
 	  Conf.offrow++;
@@ -591,4 +619,18 @@ void Editor::rowDelChar(editRow* row, int pos) {
   UpdateRow(row);
   row->size--;
   Conf.dirty++;
+};
+
+/* Append a char c in the command buffer (only one row) */
+void Editor::InsertCommand(int c) {
+  Conf.command += c;
+};
+
+/* Make the command-line prompt by insert ":" into buffer */
+void Editor::commandPrompt() {
+  if (Conf.commandst) {
+    return;
+  } 
+  Conf.commandst = true;
+  Conf.command = ":";
 };
