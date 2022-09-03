@@ -1,4 +1,5 @@
 #define CHAINSAW_VERSION "0.3.0"
+#define DEBUG_COMPILE "g++ -std=c++17 -Wshadow -Wall -O2 -D DEBUG "
 #define QUIT_TIMES 3
 
 #include <termios.h>
@@ -11,8 +12,14 @@
 #include <sys/ioctl.h>
 #include <termios.h>
 #include <iostream>
+#include <fstream>
 #include <time.h>
 #include <fcntl.h>
+#include <set>
+#include <cstdio>
+#include <memory>
+#include <stdexcept>
+#include <array>
 
 enum KEY_ACTION{
   KEY_NULL = 0,       /* NULL */
@@ -58,6 +65,7 @@ struct editorConfig {
   int cx, cy;         // Cursor position
   int offrow, offcol; // Offset of rows and cols displayed
   int lmtrow, lmtcol; // # of rows and cols we can show
+  int cmdrow, cmdcol; // # of rows and cols for the command area
   int numrows;        // Total # of rows in this file
   int rawmode;        // Is terminal raw mode enabled?
   editRow *rows;      // Rows of this file
@@ -72,9 +80,13 @@ struct editorConfig {
 
 class Editor {
 public:
+  std::string outbuffer;
+  std::string command;
+
   void RefreshScreen();
 
   void init() {
+    outbuffer = "";
     Conf.cx = 0;
     Conf.cy = 0;
     Conf.offrow = Conf.offrow = 0;
@@ -159,8 +171,9 @@ private:
       std::system("clear");
       exit(1);
     }
+    Conf.cmdrow = Conf.lmtrow/2 - 1;
     Conf.lmtrow /= 2; // Get room for the interpreter (inter)
-    Conf.lmtrow -= 2; // Get room for status bar.
+    Conf.lmtrow -= 3; // Get room for status bar.
   };
 
   void handleSigWinCh(int unused __attribute__((unused))) { updateWindowSize();
@@ -189,4 +202,58 @@ private:
     std::free(row->render);
     std::free(row->chars);
   }
+};
+
+
+/* Interpreter: used for processing user command, passed from editor 
+ * and give the output to the editor. */
+class Inter {
+public:
+  bool error;
+  std::string infilename;
+  std::string command;
+  std::string outbuffer;
+
+  Inter(std::string file) : execfile(file) {};
+
+  void init() {
+    error = false;
+    infilename = "";
+    command = "";
+    outbuffer = "";
+  };
+
+  void Exec(std::string cmd);
+
+protected:
+  void infile(std::string filename);
+  void outexe(std::string filename);
+
+  std::string shellExe(const char* cmd);
+
+private:
+  std::set<std::string> infiles;
+
+  std::string getFileName(std::string cmd) {
+    std::string filename;
+    if (cmd[0] != ' ') return "";
+    int i = 1;
+    while (i != cmd.size() && cmd[i] != ' ') {
+      filename += cmd[i];
+      i++;
+    }
+    return filename;
+  };
+
+  std::string remove_suffix(std::string str) {
+    std::string ret = "";
+    int i = 0;
+    while (str[i] != '.' || i != str.size()) {
+      ret += str[i];
+      i++;
+    }
+    return ret;
+  };
+
+  std::string execfile;
 };

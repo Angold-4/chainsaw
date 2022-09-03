@@ -88,12 +88,21 @@ void Editor::RefreshScreen() {
     std::string sstatusmsg(Conf.statusmsg);
     buffer += sstatusmsg;
   }
-
   /* Chainsaw Debug Command */
-  if (Conf.commandst) {
+  else if (Conf.commandst) {
     /* We are in the command mode */
     buffer += Conf.command;
   }
+  buffer += "\x1b[0m\r\n";
+  buffer += "\x1b[0K";
+
+  buffer += "\x1b[0K";
+  buffer += "\x1b[7m";
+  /* TODO: change empty row into running status (speed, memory usage) */
+  std::string emptyrow(Conf.lmtcol,' ');
+  buffer += emptyrow;
+  buffer += "\x1b[0m\r\n";
+  buffer += "\x1b[0K";
 
   /* Finally, put cursor at its current position. */
   int j;
@@ -230,7 +239,8 @@ void Editor::ProcessKeypress(int fd) {
   switch(c) {
     case ENTER:     /* Enter or Exec */
       if (Conf.commandst) {
-	/* TODO: Implement the executer */
+	this->command = Conf.command;
+	Conf.command = ":";
 	break;
       }
       insertNewline();
