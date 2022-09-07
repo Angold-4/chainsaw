@@ -136,8 +136,7 @@ int Editor::Open(char* filename) {
   if (!fp) {
     if (errno != ENOENT) {
       perror("Opening file");
-      std::system("clear");
-      exit(1);
+      Exit(1);
     }
     return 1;
   }
@@ -201,8 +200,7 @@ void Editor::UpdateRow(editRow* erow) {
 
   if (allocsize > UINT32_MAX) {
     printf("Some line of the edited debug input is too long\n");
-    std::system("clear");
-    exit(1);
+    Exit(1);
   }
 
   erow->render = new char[allocsize];
@@ -266,8 +264,7 @@ void Editor::ProcessKeypress(int fd) {
 	quit_times--;
 	return;
       }
-      std::system("clear");
-      exit(0);
+      Exit(0);
       break;
     case CTRL_S:    /* Ctrl-s */
       save();
@@ -299,7 +296,7 @@ int Editor::ReadKey(int fd) {
   int nread;
   char c, seq[3];
   while ((nread = read(fd, &c, 1)) == 0);
-  if (nread == -1) exit(1);
+  if (nread == -1) Exit(1);
   while (1) {
     switch(c) {
       case ESC:    /* escape sequence */
@@ -634,6 +631,14 @@ void Editor::rowDelChar(editRow* row, int pos) {
 /* Append a char c in the command buffer (only one row) */
 void Editor::InsertCommand(int c) {
   Conf.command += c;
+};
+
+/* Safe exit, with terminal clear and set the htty sane (raw mode) */
+void Editor::Exit(int status) {
+  std::system("clear");
+  /* Why is this binary file transferred over "ssh -t" being changed? in unix */
+  std::system("stty sane"); /* stty set the terminal driver */
+  exit(status);
 };
 
 /* Make the command-line prompt by insert ":" into buffer */

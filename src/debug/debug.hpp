@@ -152,6 +152,8 @@ public:
 
   void InsertCommand(int c);
 
+  void Exit(int status);
+
 protected:
   void insertNewline();
   int save();
@@ -168,8 +170,7 @@ private:
   void updateWindowSize() {
     if (getWindowSize(STDIN_FILENO, STDOUT_FILENO, &Conf.lmtrow, &Conf.lmtcol)) {
       perror("Unable to query the scrren for size (ioctl failed))");
-      std::system("clear");
-      exit(1);
+      Exit(1);
     }
     Conf.cmdrow = Conf.lmtrow/2 - 1;
     Conf.lmtrow /= 2; // Get room for the interpreter (inter)
