@@ -4,7 +4,8 @@ void Editor::RefreshScreen() {
   int y;
   editRow *r;
   char buf[32];
-  std::string buffer = "";
+
+  std::string buffer = ""; /* Dynamic append to buffer */
 
   buffer += "\x1b[?25l"; // Hide cursor
   buffer += "\x1b[H";    // Go home
@@ -15,7 +16,7 @@ void Editor::RefreshScreen() {
       if (Conf.numrows == 0 && y == Conf.lmtrow/3) { // (print welcome msg in the 1/3 pos)
 	char welcome[80];
 	int welcomelen = snprintf(welcome, sizeof(welcome),
-	    "Chainsaw debug editor -- version %s\x1b[0K\r\n]", CHAINSAW_VERSION);
+	    "Chainsaw debug editor -- version %s\x1b[0K\r\n", CHAINSAW_VERSION);
 	int padding = (Conf.lmtcol-welcomelen)/2;
 	if (padding) {
 	  buffer += "~";
@@ -237,7 +238,12 @@ void Editor::ProcessKeypress(int fd) {
   switch(c) {
     case ENTER:     /* Enter or Exec */
       if (Conf.commandst) {
-	this->command = Conf.command;
+	/* The c_str() method converts a string to an array of characters 
+	 * with a null character at the end. */
+	this->command->msg = (char *) std::malloc(sizeof(Conf.command.c_str()));
+	std::strcpy(this->command->msg, Conf.command.c_str()); // hard copy
+	this->command->len = sizeof(Conf.command.c_str());
+	this->command->valid = true;
 	Conf.command = ":";
 	break;
       }
@@ -288,7 +294,6 @@ void Editor::ProcessKeypress(int fd) {
       else InsertChar(c);
       break;
   }
-
   quit_times = QUIT_TIMES; // reset it to the original value
 };
 

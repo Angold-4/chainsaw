@@ -1,6 +1,7 @@
 #define CHAINSAW_VERSION "0.3.0"
 #define DEBUG_COMPILE "g++ -std=c++17 -Wshadow -Wall -O2 -D DEBUG "
 #define QUIT_TIMES 3
+#define BUFFINIT {NULL, 0, false}
 
 #include <termios.h>
 #include <cstdlib>
@@ -77,16 +78,26 @@ struct editorConfig {
   time_t statusmsg_time;
 };
 
+struct buffer {
+  char *msg;
+  size_t len;
+  bool valid;
+};
+
 
 class Editor {
 public:
-  std::string outbuffer;
-  std::string command;
+  /* Do not use std::string (hard to debug)*/
+
+  /* If editor is willing to send the msg to the outside, it will give a value to buffer */
+  buffer* outbuffer;
+  buffer* command;
+
+  Editor(buffer* out, buffer* cmd) : outbuffer(out), command(cmd){};
 
   void RefreshScreen();
 
   void init() {
-    outbuffer = "";
     Conf.cx = 0;
     Conf.cy = 0;
     Conf.offrow = Conf.offrow = 0;
@@ -210,25 +221,23 @@ private:
  * and give the output to the editor. */
 class Inter {
 public:
-  bool error;
-  std::string infilename;
-  std::string command;
-  std::string outbuffer;
-
-  Inter(std::string file) : execfile(file) {};
+  /* Change all of the ipc msgs into a pointer buffer */
+  std::string* infilename;
+  buffer* command;
+  buffer* outbuffer;
 
   void init() {
-    error = false;
-    infilename = "";
-    command = "";
-    outbuffer = "";
+    this->infiles = {};
   };
 
-  void Exec(std::string cmd);
+  Inter(std::string file, buffer* out, buffer* command) : execfile(file), 
+	outbuffer(out), command(command) {};
+
+  bool Exec(char* cmd);
 
 protected:
-  void infile(std::string filename);
-  void outexe(std::string filename);
+  bool infile(std::string filename);
+  bool outexe(std::string filename);
 
   std::string shellExe(const char* cmd);
 
@@ -254,6 +263,13 @@ private:
       i++;
     }
     return ret;
+  };
+
+  void set_buffer(std::string bufferstr) {
+    this->outbuffer->msg = (char *) std::malloc(sizeof(bufferstr.c_str()));
+    std::strcpy(this->outbuffer->msg, bufferstr.c_str());
+    this->outbuffer->len = sizeof(bufferstr.c_str());
+    this->outbuffer->valid = true;
   };
 
   std::string execfile;

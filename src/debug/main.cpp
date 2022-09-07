@@ -7,11 +7,14 @@ int main(int argc, char **argv) {
   }
 
   std::string execName = argv[1];
-  std::string command = "";
+
+  /* Shared buffer */
+  buffer Command = BUFFINIT;
+  buffer Outbuffer = BUFFINIT;
 
   execName += ".cpp";
-  Inter* inter = new Inter(execName);
-  Editor* editor = new Editor();
+  Inter* inter = new Inter(execName, &Outbuffer, &Command);
+  Editor* editor = new Editor(&Outbuffer, &Command);
 
   inter->init();
   editor->init();
@@ -21,14 +24,21 @@ int main(int argc, char **argv) {
   // editor->SetStatusMessage( "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find");
 
   while (1) {
-    editor->SetStatusMessage(inter->outbuffer.c_str());
+    if (Outbuffer.valid == true) { /* consume */
+      editor->SetStatusMessage(Outbuffer.msg);
+      Outbuffer = {NULL, 0, false};
+    }
+
     editor->RefreshScreen();
     editor->ProcessKeypress(STDIN_FILENO);
-    if (editor->command.size() != 0) { /* consume */
-      inter->command = command = editor->command;
-      inter->Exec(command);
-      editor->SetStatusMessage(inter->command.c_str());
-      editor->command = "";
+
+
+    if (Command.valid == true) { /* consume */
+      std::cout << Command.msg << '\n';
+      inter->Exec(Command.msg);
+      editor->SetStatusMessage(Command.msg);
+      Command = {NULL, 0, false};
     }
+    std::cout << "Hi there\n";
   }
 }

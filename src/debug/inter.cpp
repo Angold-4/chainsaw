@@ -1,58 +1,54 @@
 #include "debug.hpp"
 
 /* Main entry function of Inter class */
-void Inter::Exec(std::string cmd) {
-  this->command = cmd;
+bool Inter::Exec(char* cmd) {
+  std::string ecmd(cmd);
 
-  if (cmd.length() <= 2) {
-    this->error = true;
-    this->outbuffer = "Invalid command1";
-    return;
+  if (ecmd.length() <= 2) {
+    set_buffer("Invalid Command");
+    return false;
   }
 
-  char cmdb = cmd[0];
+  char cmdb = cmd[1];
 
-  std::string filename = getFileName(cmd.substr(1));
+
+  std::string scmd(cmd); // stack
+  std::string filename = getFileName(scmd.substr(2));
 
   if (filename == " ") {
-    this->error = true;
-    this->outbuffer = "Invalid command2";
-    return;
+    set_buffer("Invalid Filename");
+    return false;
   }
 
   switch (cmdb) {
     case '>':
-      infile(filename);
-      break;
+      return infile(filename);
     case '<':
-      outexe(filename);
-      break;
+      return outexe(filename);
     default:
-      this->error = true;
-      this->outbuffer = cmd;
-      return;
+      set_buffer("Invalid Command");
+      return false;
   }
 };
 
-/* Load the filename into read buffer */
-void Inter::infile(std::string filename) {
+/* Load the filename into the read buffer */
+bool Inter::infile(std::string filename) {
   if (infiles.find(filename) == infiles.end()) {
     std::ofstream o("debug/" + filename);
     o << "dsd";
     o.close();
+    set_buffer("Execute Successful!");
   }
-  this->outbuffer = "Execute Successful";
-  this->infilename = filename;
-  this->error = false;
+
+  this->infilename = &filename;
+  return true;
 };
 
 /* Execute the specific file */
-void Inter::outexe(std::string filename) {
+bool Inter::outexe(std::string filename) {
   if (infiles.find(filename) == infiles.end()) {
-    this->error = true;
-    this->outbuffer = 
-      "Invalid filename: " + filename;
-    return;
+    set_buffer("Invalid filename" + filename);
+    return false;
   }
 
   /* Compile */
@@ -64,14 +60,13 @@ void Inter::outexe(std::string filename) {
   res = shellExe(debug_compile);
 
   if (res != "")  {
-    this->error = true;
-    this->outbuffer = "";
-    this->outbuffer += "Compile Error:\n" + res;
-    return;
+    set_buffer("Compile Error:\n" + res);
+    return false;
   }
 
   /* Execute */
   /* TODO: time parser, get the load, execute time, mem usage */
+  return true;
 };
 
 /* Execute the shell command and get its return */
