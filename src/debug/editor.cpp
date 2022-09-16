@@ -5,7 +5,7 @@ void Editor::RefreshScreen() {
   editRow *r;
   char buf[32];
 
-  std::string buffer = ""; /* Dynamic append to buffer */
+  std::string buffer = ""; /* Dynamic append to the buffer */
 
   buffer += "\x1b[?25l"; // Hide cursor
   buffer += "\x1b[H";    // Go home
@@ -13,7 +13,7 @@ void Editor::RefreshScreen() {
   for (y = 0; y < Conf.lmtrow; y++) { // 0
     int filerow = Conf.offrow + y;
     if (filerow >= Conf.numrows) { // init case (first time call)
-      if (Conf.numrows == 0 && y == Conf.lmtrow/3) { // (print welcome msg in the 1/3 pos)
+      if (Conf.numrows == 0 && y == Conf.lmtrow/2) { // (print welcome msg in the 1/2 pos)
 	char welcome[80];
 	int welcomelen = snprintf(welcome, sizeof(welcome),
 	    "Chainsaw debug editor -- version %s\x1b[0K\r\n", CHAINSAW_VERSION);
@@ -80,20 +80,19 @@ void Editor::RefreshScreen() {
   }
 
   buffer += "\x1b[0m\r\n";
+  buffer += "\x1b[0K";
 
   /* Second row depends on Conf.statusmsg and the status message update time */
-  buffer += "\x1b[0K";
   int msglen = strlen(Conf.statusmsg);
-  if (msglen && time(NULL) - Conf.statusmsg_time < 5) {
+
+  if (Conf.commandst) {
+    buffer += Conf.command;
+  } else if (msglen && time(NULL) - Conf.statusmsg_time < 5) {
     // abAppend(&ab, Conf.statusmsg, msglen <= Conf.lmtcol ? msglen : Conf.lmtcol);
     std::string sstatusmsg(Conf.statusmsg);
     buffer += sstatusmsg;
   }
-  /* Chainsaw Debug Command */
-  else if (Conf.commandst) {
-    /* We are in the command mode */
-    buffer += Conf.command;
-  }
+
   buffer += "\x1b[0m\r\n";
   buffer += "\x1b[0K";
 
@@ -105,23 +104,52 @@ void Editor::RefreshScreen() {
   buffer += "\x1b[0m\r\n";
   buffer += "\x1b[0K";
 
-  /* Finally, put cursor at its current position. */
-  int j;
-  int cx = 1;
-  int filerow = Conf.offrow + Conf.cy;
-  editRow *row = (filerow >= Conf.numrows) ? NULL : &Conf.rows[filerow];
+  for (y = 0; y < ConfOut.lmtrow; y++) { // 0
+    int filerow = ConfOut.offrow + y;
 
-  if (row) {
-    for (j = Conf.offcol; j < (Conf.cx + Conf.offcol); j++) {
-      if (j < row->size && row->chars[j] == TAB) cx += 7 - ((cx) % 8);
-      cx++;
+    if (filerow >= ConfOut.numrows) { // init case (first time call)
+      if (ConfOut.numrows == 0 && y == ConfOut.lmtrow/2) { // (print welcome msg in the 1/3 pos)
+	char welcome[80];
+	int welcomelen = snprintf(welcome, sizeof(welcome),
+	    "Chainsaw debug outbuffer -- version %s\x1b[0K\r\n", CHAINSAW_VERSION);
+	int padding = (ConfOut.lmtcol-welcomelen)/2;
+	if (padding) {
+	  buffer += "";
+	  padding--;
+	}
+	while (padding--) buffer += " ";
+	std::string swelcome(welcome);
+	buffer += swelcome;
+      } else {
+	buffer += "\x1b[0K\r\n"; // ~ (empty)
+      }
+      break;
     }
+
+    r = &ConfOut.rows[filerow];
+
+    int len = r->rsize - ConfOut.offcol; // offset
+
+    if (len > 0) {
+      if (len > ConfOut.lmtcol) len = ConfOut.lmtcol;
+      char *c = r->render + ConfOut.offcol; // start point
+      int j;
+      for (j = 0; j < len; j++) {
+	buffer += *(c+j);
+      }
+    }
+
+    buffer += "\x1b[39m";
+    buffer += "\x1b[0K";
+    buffer += "\r\n";
   }
 
-  snprintf(buf, sizeof(buf), "\x1b[%d;%dH", Conf.cy, cx); // set the position of the cursor
-  std::string sbuf(buf);
-  buffer += sbuf;
-  buffer += "\x1b[?25h"; // show the cursor
+  if (this->outMode) {
+    set_cursor(ConfOut, buf, buffer);
+  } else {
+    set_cursor(Conf, buf, buffer);
+  }
+
   std::cout << buffer << std::endl;
 }
 
@@ -151,13 +179,31 @@ int Editor::Open(char* filename) {
     if (linelen && (line[linelen-1] == '\n' || line[linelen-1] == '\r')) {
       line[--linelen] = '\0';
     }
-    InsertRow(Conf.numrows, line, linelen);
+    InsertRow(Conf.numrows, line, linelen, Conf);
   }
   return 0;
 };
 
+
+/* Load the out buffer (debug output, compile err) into editor */
+int Editor::LoadOut(buffer* buf) {
+  if (!buf->valid || buf->type != BUFOUT) { return 1; }
+  std::istringstream strout(buf->msg);
+  std::string sline;
+
+  while (std::getline(strout, sline, '\n')) {
+    sline += '\0';
+    char *line = strdup(sline.c_str());
+    size_t linelen = sline.size();
+    InsertRow(ConfOut.numrows, line, linelen, ConfOut);
+  }
+
+  return 0;
+};
+
+
 /* Insert a row at the specified position, shifting the other rows on the bottom */
-void Editor::InsertRow(int pos, char *line, size_t len) {
+void Editor::InsertRow(int pos, char *line, size_t len, editorConfig& Conf) {
   if (pos > Conf.numrows) return;
 
   /* reallocate rows in the heap */
@@ -230,10 +276,19 @@ void Editor::SetStatusMessage(const char *fmt, ...) {
 
 /* Process events arriving from the standard input */
 void Editor::ProcessKeypress(int fd) {
+  int c = ReadKey(fd);
+  if (outMode) {
+    /* Cursor is in Out Buffer */
+    focusKeyPress(c, this->ConfOut);
+  } else {
+    focusKeyPress(c, this->Conf);
+  }
+};
+
+/* Process events arriving from the standard input according to which buffer we are in */
+void Editor::focusKeyPress(int c, editorConfig& Conf) {
   /* When the file is modified, requires Ctrl-q to be pressed N times before quitting */
   static int quit_times = QUIT_TIMES;
-
-  int c = ReadKey(fd);
 
   switch(c) {
     case ENTER:     /* Enter or Exec */
@@ -241,20 +296,16 @@ void Editor::ProcessKeypress(int fd) {
 	transferCmd();
 	break;
       }
-      insertNewline();
+      insertNewline(Conf);
       break;
     case CTRL_C:    /* Ctrl-c */
-      /* Entering the command mode, if we already in, then do nothing */
-      if (!Conf.commandst) {
-	commandPrompt();
-      }
+      /* Enter / Quit the command mode */
+      Conf.commandst = !Conf.commandst;
+      Conf.command = ":";
       break;
     case CTRL_D:    /* Ctrl-d */
-      /* Quit the command mode, if we already out, then do nothing */
-      if (Conf.commandst) {
-	Conf.command = "";
-	Conf.commandst = false;
-      }
+      /* Switch between buffer */
+      this->outMode = !this->outMode;
       break;
     case CTRL_Q:    /* Ctrl-q */
       /* Quit if the file was already saved, or we want it to quit directly */
@@ -267,15 +318,17 @@ void Editor::ProcessKeypress(int fd) {
       Exit(0);
       break;
     case CTRL_S:    /* Ctrl-s */
-      save();
+      if (!outMode) {
+	save(Conf);
+      }
       break;
     case BACKSPACE:
     case DEL_KEY:
       if (Conf.commandst) {
 	delCharCmd();
-	break;
+      } else if (!outMode) {
+	delChar();
       }
-      delChar();
       break;
     case ARROW_UP:
     case CTRL_J:
@@ -285,14 +338,15 @@ void Editor::ProcessKeypress(int fd) {
     case CTRL_H:
     case ARROW_RIGHT:
     case CTRL_L:
-      MoveCursor(c);
+      MoveCursor(c, Conf);
       break;
     default:
-      if (Conf.commandst) InsertCommand(c);
-      else InsertChar(c);
+      if (Conf.commandst) InsertCommand(c, Conf);
+      else if (!outMode) InsertChar(c, Conf);
       break;
   }
   quit_times = QUIT_TIMES; // reset it to the original value
+
 };
 
 int Editor::ReadKey(int fd) {
@@ -345,7 +399,7 @@ int Editor::ReadKey(int fd) {
   }
 };
 
-char* Editor::RowsToString(int *buflen) {
+char* Editor::RowsToString(int *buflen, editorConfig& Conf) {
   char *buf = NULL, *p; // pointer
   int totlen = 0;
   int j;
@@ -374,7 +428,7 @@ char* Editor::RowsToString(int *buflen) {
 
 /* Insert a character at specific position in a row, moving the 
  * remaining chars on the right if needed */
-void Editor::rowInsertChar(editRow *row, int pos, int c) {
+void Editor::rowInsertChar(editRow *row, int pos, int c, editorConfig& Conf) {
   if (pos > row->size) {
     int padlen = pos-row->size;
     row->chars = (char*) std::realloc(row->chars, row->size+padlen+2);
@@ -392,19 +446,19 @@ void Editor::rowInsertChar(editRow *row, int pos, int c) {
 };
 
 /* Insert the specified char at the current prompt position */
-void Editor::InsertChar(int c) {
+void Editor::InsertChar(int c, editorConfig& Conf) {
   int filerow = Conf.offrow + Conf.cy;
   int filecol = Conf.offcol + Conf.cx;
   editRow *row = (filerow >= Conf.numrows) ? NULL : &Conf.rows[filerow];
 
   if (!row) {
     while (Conf.numrows <= filerow) {
-      InsertRow(Conf.numrows, strdup(""), 0);
+      InsertRow(Conf.numrows, strdup(""), 0, Conf);
     }
   }
 
   row = &Conf.rows[filerow];
-  rowInsertChar(row, filecol, c);
+  rowInsertChar(row, filecol, c, Conf);
 
   if (Conf.cx == Conf.lmtcol-1) {
     Conf.offcol++;
@@ -416,7 +470,7 @@ void Editor::InsertChar(int c) {
 
 /* Inserting a newline is slightly complex as we have to handling inserting a 
  * newline at the middle of a line */
-void Editor::insertNewline() {
+void Editor::insertNewline(editorConfig& Conf) {
   int filerow = Conf.offrow + Conf.cy;
   int filecol = Conf.offcol + Conf.cx;
   editRow *row = (filerow >= Conf.numrows) ? NULL : &Conf.rows[filerow];
@@ -424,7 +478,7 @@ void Editor::insertNewline() {
   if (!row) {
     /* Append newline in the end */
     if (filerow == Conf.numrows) {
-      InsertRow(filerow, strdup(""), 0);
+      InsertRow(filerow, strdup(""), 0, Conf);
       goto fixcursor;
     }
     return;
@@ -434,10 +488,10 @@ void Editor::insertNewline() {
   if (filecol == 0) {
     /* If the cursor is over the current line size, we want to conceptually
      * think it's just over the last character */
-    InsertRow(filerow, strdup(""), 0);
+    InsertRow(filerow, strdup(""), 0, Conf);
   } else {
     /* We are in the middle of a line, Split it between two rows. */
-    InsertRow(filerow+1, row->chars+filecol, row->size-filecol);
+    InsertRow(filerow+1, row->chars+filecol, row->size-filecol, Conf);
     row = &Conf.rows[filerow];
     row->chars[filecol] = '\0';
     row->size = filecol;
@@ -455,9 +509,9 @@ fixcursor:
 };
 
 /* Save the current file on disk. Return 0 on success. */
-int Editor::save() {
+int Editor::save(editorConfig& Conf) {
   int len;
-  char* buf = RowsToString(&len);
+  char* buf = RowsToString(&len, Conf);
   int fd = open(Conf.filename, O_RDWR|O_CREAT, 0644);
   if (fd == -1) goto writeerr;
 
@@ -479,7 +533,7 @@ writeerr:
 };
 
 /* Handle cursor position change because arrow keys were pressed. */
-void Editor::MoveCursor(int key) {
+void Editor::MoveCursor(int key, editorConfig& Conf) {
   int filerow = Conf.offrow + Conf.cy;
   int filecol = Conf.offcol + Conf.cx;
   int rowlen;
@@ -632,7 +686,7 @@ void Editor::rowDelChar(editRow* row, int pos) {
 };
 
 /* Append a char c in the command buffer (only one row) */
-void Editor::InsertCommand(int c) {
+void Editor::InsertCommand(int c, editorConfig& Conf) {
   Conf.command += c;
 };
 
@@ -646,9 +700,6 @@ void Editor::Exit(int status) {
 
 /* Make the command-line prompt by insert ":" into buffer */
 void Editor::commandPrompt() {
-  if (Conf.commandst) {
-    return;
-  } 
   Conf.commandst = true;
   Conf.command = ":";
 };

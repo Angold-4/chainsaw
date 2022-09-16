@@ -6,9 +6,11 @@
 #define OUTBUF 1
 #define OUTCMD 2
 #define OUTLOAD 3
+#define BUFOUT 4
 
 
 #include <termios.h>
+#include <sstream>
 #include <cstdlib>
 #include <stdio.h>
 #include <stdarg.h>
@@ -99,20 +101,26 @@ public:
   buffer* outbuffer;
   buffer* command;
 
+  struct editorConfig Conf;
+  struct editorConfig ConfOut; /* Config for the out (Compile error, debug output)*/
+  bool outMode;
+
   Editor(buffer* out, buffer* cmd) : outbuffer(out), command(cmd){};
 
   void RefreshScreen();
 
   void init() {
-    Conf.cx = 0;
-    Conf.cy = 0;
-    Conf.offrow = Conf.offrow = 0;
-    Conf.numrows = 0;
-    Conf.rows = NULL;
-    Conf.dirty = 0;
+    Conf.cx = ConfOut.cx = 0;
+    Conf.cy = ConfOut.cy = 0;
+    Conf.offrow = ConfOut.offrow = 0;
+    Conf.offcol = ConfOut.offcol = 0;
+    Conf.numrows = ConfOut.numrows = 0;
+    Conf.rows = ConfOut.rows = NULL;
+    Conf.dirty = ConfOut.dirty = 0;
     Conf.filename = NULL;
     Conf.command = "";
     Conf.commandst = false;
+    outMode = false;
     updateWindowSize();
   };
 
@@ -151,7 +159,9 @@ public:
 
   int Open(char *filename);
 
-  void InsertRow(int at, char* line, size_t len);
+  int LoadOut(buffer* buf);
+
+  void InsertRow(int at, char* line, size_t len, editorConfig& Conf);
 
   void UpdateRow(editRow* erow);
 
@@ -161,44 +171,47 @@ public:
 
   void SetStatusMessage(const char *fmt, ...);
 
-  char* RowsToString(int *buflen);
+  char* RowsToString(int *buflen, editorConfig& Conf);
 
-  void MoveCursor(int key);
+  void MoveCursor(int key, editorConfig& Conf);
 
-  void InsertChar(int c);
+  void InsertChar(int c, editorConfig& Conf);
 
-  void InsertCommand(int c);
+  void InsertCommand(int c, editorConfig& Conf);
 
   void Exit(int status);
 
 protected:
-  void insertNewline();
-  int save();
+  void insertNewline(editorConfig& Conf);
+  int save(editorConfig& Conf);
   void rowAppendString(editRow* erow, char *s, size_t len);
   void delChar();
   void delRow(int at);
   void rowDelChar(editRow* erow, int at);
-  void rowInsertChar(editRow *row, int pos, int c);
+  void rowInsertChar(editRow *row, int pos, int c, editorConfig& Conf);
   void commandPrompt();
   void transferCmd();
   void delCharCmd();
+  void focusKeyPress(int c, editorConfig& Conf);
 
 private:
-  struct editorConfig Conf;
-
   void updateWindowSize() {
     if (getWindowSize(STDIN_FILENO, STDOUT_FILENO, &Conf.lmtrow, &Conf.lmtcol)) {
-      perror("Unable to query the scrren for size (ioctl failed))");
+      perror("Unable to query the screen for size (ioctl failed))");
       Exit(1);
     }
     Conf.cmdrow = Conf.lmtrow/2 - 1;
-    Conf.lmtrow /= 2; // Get room for the interpreter (inter)
-    Conf.lmtrow -= 3; // Get room for status bar.
+    ConfOut.lmtrow = Conf.lmtrow /= 2;
+    ConfOut.lmtcol = Conf.lmtcol;
+    ConfOut.lmtrow -= 5; // Get room for status bar.
   };
 
-  void handleSigWinCh(int unused __attribute__((unused))) { updateWindowSize();
+  void handleSigWinCh(int unused __attribute__((unused))) { 
+    updateWindowSize();
     if (Conf.cy > Conf.lmtrow) Conf.cy = Conf.lmtrow - 1;
+    if (ConfOut.cy > ConfOut.lmtrow) ConfOut.cy = ConfOut.lmtrow - 1;
     if (Conf.cx > Conf.lmtcol) Conf.cx = Conf.lmtcol - 1;
+    if (ConfOut.cx > ConfOut.lmtcol) ConfOut.cx = ConfOut.lmtcol - 1;
     RefreshScreen();
   }
 
@@ -208,13 +221,38 @@ private:
   int getWindowSize(int ifd, int ofd, int *rows, int *cols) {
     struct winsize ws;
     if (ioctl(1, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0) {
-      /* if ioctl() failed, then we just failed TODO: handle this case*/
+      /* if ioctl() failed, then we just failed TODO: handle this case */
       return -1;
     } else {
       *cols = ws.ws_col;
       *rows = ws.ws_row;
       return 0;
     }
+  };
+
+  void set_cursor(editorConfig& Conf, char* buf, std::string& buffer) {
+    /* Finally, put cursor at its current position. */
+    int j;
+    int cx = 1;
+    int filerow = Conf.offrow + Conf.cy;
+    editRow *row = (filerow >= Conf.numrows) ? NULL : &Conf.rows[filerow];
+
+    if (row) {
+      for (j = Conf.offcol; j < (Conf.cx + Conf.offcol); j++) {
+	if (j < row->size && row->chars[j] == TAB) cx += 7 - ((cx) % 8);
+	cx++;
+      }
+    }
+
+    if (&Conf == &this->ConfOut) {
+      snprintf(buf, sizeof(buf), "\x1b[%d;%dH", Conf.cy + Conf.lmtrow+8, cx); // set the position of the cursor
+    } else { 
+      snprintf(buf, sizeof(buf), "\x1b[%d;%dH", Conf.cy, cx); // set the position of the cursor
+    }
+
+    std::string sbuf(buf);
+    buffer += sbuf;
+    buffer += "\x1b[?25h"; // show the cursor
   };
 
   /* Free row's heap allocated stuff. */
@@ -233,13 +271,14 @@ public:
   buffer* command;
   buffer* outbuffer;
   buffer* outload;
+  buffer* bufout;
 
   void init() {
     this->infiles = {};
   };
 
-  Inter(std::string file, buffer* out, buffer* command, buffer* outload) : execfile(file), 
-	outbuffer(out), command(command),  outload(outload) {};
+  Inter(std::string file, buffer* out, buffer* command, buffer* outload, buffer* bufout) : execfile(file), 
+	outbuffer(out), command(command), outload(outload),  bufout(bufout) {};
 
   bool Exec(char* cmd);
 

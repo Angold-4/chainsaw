@@ -16,7 +16,7 @@ bool Inter::Exec(char* cmd) {
   std::string filename = getFileName(scmd.substr(2));
 
   if (filename == " " || filename == "") {
-    set_buffer("Invalid Filename");
+    set_buffer("Invalid Command");
     return false;
   }
 
@@ -42,8 +42,8 @@ bool Inter::infile(std::string filename) {
 
   filename = "debug/" + filename;
 
-  std::ofstream o(filename);
-  this->outload->msg = (char *) std::malloc(sizeof(filename.c_str()));
+  std::ofstream o(filename, std::ios_base::app);
+  this->outload->msg = (char*) std::malloc(sizeof(filename.c_str()));
   std::strcpy(this->outload->msg, filename.c_str()); // hard copy
   this->outload->len = sizeof(filename.c_str());
   this->outload->valid = true;
@@ -61,20 +61,29 @@ bool Inter::outexe(std::string filename) {
   }
 
   /* Compile */
-  std::string cmd = DEBUG_COMPILE; std::string res;
-  std::string rsuffix = remove_suffix(filename);
-  cmd += filename + " -o " + rsuffix;
+
+  std::string cmd = DEBUG_COMPILE; 
+  std::string res;
+  // std::string rsuffix = remove_suffix(filename);
+  // cmd += filename + " -o " + rsuffix;
+  cmd += this->execfile + " -o test";
+
   const char* debug_compile = cmd.c_str();
 
   res = shellExe(debug_compile);
 
-  if (res != "")  {
-    set_buffer("Compile Error:\n" + res);
-    return false;
-  }
-
   /* Execute */
   /* TODO: time parser, get the load, execute time, mem usage */
+
+  res = shellExe("time ./test");
+
+  if (res != "")  {
+    bufout->msg = strdup(res.c_str());
+    bufout->valid = true;
+    bufout->len = res.size();
+    bufout->type = BUFOUT;
+  }
+
   return true;
 };
 

@@ -17,6 +17,9 @@ void consume(buffer* buf, Inter* inter, Editor* editor) {
     /* Inter indicate the load buffer (>) to user (Editor) */
     editor->Open(buf->msg);
     break;
+  case BUFOUT:
+    /* Inter indicate the execution output */
+    editor->LoadOut(buf);
   default:
     return;
   }
@@ -35,9 +38,10 @@ int main(int argc, char **argv) {
   buffer Outbuffer = BUFFINIT;/* Inter -> Editor */
   buffer Command = BUFFINIT;  /* Editor -> Inter */
   buffer OutLoad = BUFFINIT;  /* Inter -> Editor */
+  buffer BufOut = BUFFINIT;   /* Inter -> Editor */
 
   execName += ".cpp";
-  Inter* inter = new Inter(execName, &Outbuffer, &Command, &OutLoad);
+  Inter* inter = new Inter(execName, &Outbuffer, &Command, &OutLoad, &BufOut);
   Editor* editor = new Editor(&Outbuffer, &Command);
 
   inter->init();
@@ -45,9 +49,10 @@ int main(int argc, char **argv) {
 
   // editor->Open(argv[1]);
   editor->EnableRawMode(STDIN_FILENO);
-  // editor->SetStatusMessage( "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find");
+  editor->SetStatusMessage( "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-C = command");
 
   while (1) {
+    consume(&BufOut, inter, editor);
     consume(&Outbuffer, inter, editor);
     consume(&OutLoad, inter, editor);
     editor->RefreshScreen();
