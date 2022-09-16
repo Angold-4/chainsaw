@@ -15,7 +15,7 @@ bool Inter::Exec(char* cmd) {
   std::string scmd(cmd); // stack
   std::string filename = getFileName(scmd.substr(2));
 
-  if (filename == " ") {
+  if (filename == " " || filename == "") {
     set_buffer("Invalid Filename");
     return false;
   }
@@ -34,13 +34,22 @@ bool Inter::Exec(char* cmd) {
 /* Load the filename into the read buffer */
 bool Inter::infile(std::string filename) {
   if (infiles.find(filename) == infiles.end()) {
-    std::ofstream o("debug/" + filename);
-    o << "dsd";
-    o.close();
-    set_buffer("Execute Successful!");
+    set_buffer("Buffer Created: " + filename);
+    infiles.insert(filename);
+  } else {
+    set_buffer("Load Buffer: " + filename);
   }
 
-  this->infilename = &filename;
+  filename = "debug/" + filename;
+
+  std::ofstream o(filename);
+  this->outload->msg = (char *) std::malloc(sizeof(filename.c_str()));
+  std::strcpy(this->outload->msg, filename.c_str()); // hard copy
+  this->outload->len = sizeof(filename.c_str());
+  this->outload->valid = true;
+  this->outload->type = OUTLOAD;
+  o.close();
+
   return true;
 };
 

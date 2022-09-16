@@ -1,5 +1,28 @@
 #include "debug.hpp"
 
+void consume(buffer* buf, Inter* inter, Editor* editor) {
+  if (!buf->valid) { return; }
+  switch(buf->type) {
+  case BUFNULL:
+    return;
+  case OUTBUF:
+    /* Inter send status msg to user (Editor) */
+    editor->SetStatusMessage(buf->msg);
+    break;
+  case OUTCMD:
+    /* User (Editor) send command to Inter to execute */
+    inter->Exec(buf->msg);
+    break;
+  case OUTLOAD:
+    /* Inter indicate the load buffer (>) to user (Editor) */
+    editor->Open(buf->msg);
+    break;
+  default:
+    return;
+  }
+  *buf = BUFFINIT;
+};
+
 int main(int argc, char **argv) {
   if (argc != 2) {
     std::cerr << "Usage: debug <filename>\n";
@@ -9,11 +32,12 @@ int main(int argc, char **argv) {
   std::string execName = argv[1];
 
   /* Shared buffer */
-  buffer Command = BUFFINIT;
-  buffer Outbuffer = BUFFINIT;
+  buffer Outbuffer = BUFFINIT;/* Inter -> Editor */
+  buffer Command = BUFFINIT;  /* Editor -> Inter */
+  buffer OutLoad = BUFFINIT;  /* Inter -> Editor */
 
   execName += ".cpp";
-  Inter* inter = new Inter(execName, &Outbuffer, &Command);
+  Inter* inter = new Inter(execName, &Outbuffer, &Command, &OutLoad);
   Editor* editor = new Editor(&Outbuffer, &Command);
 
   inter->init();
@@ -24,21 +48,10 @@ int main(int argc, char **argv) {
   // editor->SetStatusMessage( "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find");
 
   while (1) {
-    if (Outbuffer.valid == true) { /* consume */
-      editor->SetStatusMessage(Outbuffer.msg);
-      Outbuffer = {NULL, 0, false};
-    }
-
+    consume(&Outbuffer, inter, editor);
+    consume(&OutLoad, inter, editor);
     editor->RefreshScreen();
     editor->ProcessKeypress(STDIN_FILENO);
-
-
-    if (Command.valid == true) { /* consume */
-      std::cout << Command.msg << '\n';
-      inter->Exec(Command.msg);
-      editor->SetStatusMessage(Command.msg);
-      Command = {NULL, 0, false};
-    }
-    std::cout << "Hi there\n";
+    consume(&Command, inter, editor);
   }
 }

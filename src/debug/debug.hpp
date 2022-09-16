@@ -1,7 +1,12 @@
-#define CHAINSAW_VERSION "0.3.0"
+#define CHAINSAW_VERSION "0.3.0" 
 #define DEBUG_COMPILE "g++ -std=c++17 -Wshadow -Wall -O2 -D DEBUG "
 #define QUIT_TIMES 3
-#define BUFFINIT {NULL, 0, false}
+#define BUFFINIT {NULL, 0, false, 0}
+#define BUFNULL 0
+#define OUTBUF 1
+#define OUTCMD 2
+#define OUTLOAD 3
+
 
 #include <termios.h>
 #include <cstdlib>
@@ -82,12 +87,13 @@ struct buffer {
   char *msg;
   size_t len;
   bool valid;
+  int type;  /* 0 -> OUTNULL, 1 -> OUTBUF, 2 -> OUTCMD, 3 -> OUTLOAD */
 };
 
 
 class Editor {
 public:
-  /* Do not use std::string (hard to debug)*/
+  /* Do not use std::string (hard to debug) */
 
   /* If editor is willing to send the msg to the outside, it will give a value to buffer */
   buffer* outbuffer;
@@ -174,6 +180,8 @@ protected:
   void rowDelChar(editRow* erow, int at);
   void rowInsertChar(editRow *row, int pos, int c);
   void commandPrompt();
+  void transferCmd();
+  void delCharCmd();
 
 private:
   struct editorConfig Conf;
@@ -222,16 +230,16 @@ private:
 class Inter {
 public:
   /* Change all of the ipc msgs into a pointer buffer */
-  std::string* infilename;
   buffer* command;
   buffer* outbuffer;
+  buffer* outload;
 
   void init() {
     this->infiles = {};
   };
 
-  Inter(std::string file, buffer* out, buffer* command) : execfile(file), 
-	outbuffer(out), command(command) {};
+  Inter(std::string file, buffer* out, buffer* command, buffer* outload) : execfile(file), 
+	outbuffer(out), command(command),  outload(outload) {};
 
   bool Exec(char* cmd);
 
@@ -270,6 +278,7 @@ private:
     std::strcpy(this->outbuffer->msg, bufferstr.c_str());
     this->outbuffer->len = sizeof(bufferstr.c_str());
     this->outbuffer->valid = true;
+    this->outbuffer->type = OUTBUF;
   };
 
   std::string execfile;

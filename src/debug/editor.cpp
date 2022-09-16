@@ -237,14 +237,8 @@ void Editor::ProcessKeypress(int fd) {
 
   switch(c) {
     case ENTER:     /* Enter or Exec */
-      if (Conf.commandst) {
-	/* The c_str() method converts a string to an array of characters 
-	 * with a null character at the end. */
-	this->command->msg = (char *) std::malloc(sizeof(Conf.command.c_str()));
-	std::strcpy(this->command->msg, Conf.command.c_str()); // hard copy
-	this->command->len = sizeof(Conf.command.c_str());
-	this->command->valid = true;
-	Conf.command = ":";
+      if (Conf.commandst) { /* Transfer the cmd msg to outside */
+	transferCmd();
 	break;
       }
       insertNewline();
@@ -277,6 +271,10 @@ void Editor::ProcessKeypress(int fd) {
       break;
     case BACKSPACE:
     case DEL_KEY:
+      if (Conf.commandst) {
+	delCharCmd();
+	break;
+      }
       delChar();
       break;
     case ARROW_UP:
@@ -476,7 +474,7 @@ int Editor::save() {
 writeerr:
   std::free(buf);
   if (fd != -1) close(fd);
-  SetStatusMessage("Can't save! I/O error: %s", strerror(errno));
+  SetStatusMessage("Can't save! I/O error: %s, %s", strerror(errno), Conf.filename);
   return 1;
 };
 
@@ -654,3 +652,23 @@ void Editor::commandPrompt() {
   Conf.commandst = true;
   Conf.command = ":";
 };
+
+/* Transfer the current cmd into outside */
+void Editor::transferCmd() {
+  /* The c_str() method converts a string to an array of characters 
+   * with a null character at the end. */
+  this->command->msg = (char *) std::malloc(sizeof(Conf.command.c_str()));
+  std::strcpy(this->command->msg, Conf.command.c_str()); // hard copy
+  this->command->len = sizeof(Conf.command.c_str());
+  this->command->valid = true;
+  this->command->type = OUTCMD;
+  Conf.command = ":";
+  Conf.commandst = false; /* enter the editor input status */
+};
+
+
+/* Delete one char from the cmd buffer */
+void Editor::delCharCmd() {
+  if (!Conf.commandst || Conf.command.size() <= 1) { return; } // keep the ':'
+  Conf.command.erase(Conf.command.size()-1);
+}
