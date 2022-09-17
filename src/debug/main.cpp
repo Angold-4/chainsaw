@@ -4,7 +4,7 @@ void consume(buffer* buf, Inter* inter, Editor* editor) {
   if (!buf->valid) { return; }
   switch(buf->type) {
   case BUFNULL:
-    return;
+    break;
   case OUTBUF:
     /* Inter send status msg to user (Editor) */
     editor->SetStatusMessage(buf->msg);
@@ -19,9 +19,11 @@ void consume(buffer* buf, Inter* inter, Editor* editor) {
     break;
   case BUFOUT:
     /* Inter indicate the execution output */
-    editor->LoadOut(buf);
+    editor->LoadOut(buf->msg);
+    inter->RemoveTmp();
+    break;
   default:
-    return;
+    break;
   }
   *buf = BUFFINIT;
 };
@@ -52,8 +54,8 @@ int main(int argc, char **argv) {
   editor->SetStatusMessage( "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-C = command");
 
   while (1) {
-    consume(&BufOut, inter, editor);
     consume(&Outbuffer, inter, editor);
+    consume(&BufOut, inter, editor);
     consume(&OutLoad, inter, editor);
     editor->RefreshScreen();
     editor->ProcessKeypress(STDIN_FILENO);

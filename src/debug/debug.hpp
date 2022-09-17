@@ -8,7 +8,6 @@
 #define OUTLOAD 3
 #define BUFOUT 4
 
-
 #include <termios.h>
 #include <sstream>
 #include <cstdlib>
@@ -17,7 +16,9 @@
 #include <unistd.h>
 #include <cstring>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include <sys/ioctl.h>
+#include <sys/types.h>
 #include <termios.h>
 #include <iostream>
 #include <fstream>
@@ -118,6 +119,7 @@ public:
     Conf.rows = ConfOut.rows = NULL;
     Conf.dirty = ConfOut.dirty = 0;
     Conf.filename = NULL;
+    ConfOut.filename = NULL;
     Conf.command = "";
     Conf.commandst = false;
     outMode = false;
@@ -159,7 +161,7 @@ public:
 
   int Open(char *filename);
 
-  int LoadOut(buffer* buf);
+  int LoadOut(char *filename);
 
   void InsertRow(int at, char* line, size_t len, editorConfig& Conf);
 
@@ -282,13 +284,23 @@ public:
 
   bool Exec(char* cmd);
 
+  void RemoveTmp();
+
 protected:
   bool infile(std::string filename);
   bool outexe(std::string filename);
 
   std::string shellExe(const char* cmd);
+  int shellExec(const char* cmd);
 
 private:
+  std::string execfile;
+  int exit_code_;
+  std::string stdout_file_;
+  std::string stderr_file_;
+  std::string tmp_dir_;
+  bool valid_exec_;
+
   std::set<std::string> infiles;
 
   std::string getFileName(std::string cmd) {
@@ -320,5 +332,15 @@ private:
     this->outbuffer->type = OUTBUF;
   };
 
-  std::string execfile;
+  std::string file2str(std::string filename) {
+    std::ifstream file;
+    std::stringstream str_stream;
+
+    file.open(filename, std::ios_base::app);
+    if (file.is_open()) {
+      str_stream << file.rdbuf();
+      file.close();
+    }
+    return str_stream.str();
+  };
 };

@@ -87,7 +87,7 @@ void Editor::RefreshScreen() {
 
   if (Conf.commandst) {
     buffer += Conf.command;
-  } else if (msglen && time(NULL) - Conf.statusmsg_time < 5) {
+  } else if (msglen && time(NULL) - Conf.statusmsg_time < 2) {
     // abAppend(&ab, Conf.statusmsg, msglen <= Conf.lmtcol ? msglen : Conf.lmtcol);
     std::string sstatusmsg(Conf.statusmsg);
     buffer += sstatusmsg;
@@ -158,7 +158,7 @@ int Editor::Open(char* filename) {
   FILE* fp;
   Conf.dirty = 0;
   size_t fnlen = strlen(filename) + 1;
-  Conf.filename = new char[fnlen];
+  Conf.filename = (char*) std::malloc(fnlen);
   std::memcpy(Conf.filename, filename, fnlen);
 
   fp = fopen(filename, "r");
@@ -186,15 +186,31 @@ int Editor::Open(char* filename) {
 
 
 /* Load the out buffer (debug output, compile err) into editor */
-int Editor::LoadOut(buffer* buf) {
-  if (!buf->valid || buf->type != BUFOUT) { return 1; }
-  std::istringstream strout(buf->msg);
-  std::string sline;
+int Editor::LoadOut(char* filename) {
+  FILE* fp;
+  ConfOut.dirty = 0;
+  size_t fnlen = strlen(filename) + 1;
+  ConfOut.filename = new char[fnlen];
+  std::memcpy(ConfOut.filename, filename, fnlen);
 
-  while (std::getline(strout, sline, '\n')) {
-    sline += '\0';
-    char *line = strdup(sline.c_str());
-    size_t linelen = sline.size();
+  fp = fopen(filename, "r");
+  if (!fp) {
+    if (errno != ENOENT) {
+      perror("Opening file");
+      Exit(1);
+    }
+    return 1;
+  }
+
+  char *line = NULL;
+  size_t linecap = 0;
+  ssize_t linelen;
+
+  while ((linelen = getline(&line, &linecap, fp)) != -1) {
+    /* line by line, when meet newline (\n or \r), replace it with a terminal */
+    if (linelen && (line[linelen-1] == '\n' || line[linelen-1] == '\r')) {
+      line[--linelen] = '\0';
+    }
     InsertRow(ConfOut.numrows, line, linelen, ConfOut);
   }
 

@@ -61,29 +61,51 @@ bool Inter::outexe(std::string filename) {
   }
 
   /* Compile */
-
   std::string cmd = DEBUG_COMPILE; 
-  std::string res;
+  int ret_code = 0;
   // std::string rsuffix = remove_suffix(filename);
   // cmd += filename + " -o " + rsuffix;
   cmd += this->execfile + " -o test";
 
   const char* debug_compile = cmd.c_str();
 
-  res = shellExe(debug_compile);
+  ret_code = shellExec(debug_compile);
+
+  if (ret_code || (file2str(stderr_file_).size() && valid_exec_)) {
+    std::cout << this->stderr_file_ << '\n';
+    this->bufout->msg = (char*) std::malloc(sizeof(stderr_file_.c_str()));
+    std::strcpy(this->bufout->msg, stderr_file_.c_str()); // hard copy
+    bufout->len = stderr_file_.size();
+    bufout->valid = true;
+    bufout->type = BUFOUT;
+    return false;
+  }
+
+  std::remove(this->stderr_file_.c_str());
+  std::remove(this->stdout_file_.c_str());
+  std::remove(this->tmp_dir_.c_str());
+
+  this->valid_exec_ = false;
 
   /* Execute */
   /* TODO: time parser, get the load, execute time, mem usage */
 
-  res = shellExe("time ./test");
+  ret_code = shellExec("./test");
 
-  if (res != "")  {
-    bufout->msg = strdup(res.c_str());
+  if (true) {
+    this->bufout->msg = (char*) std::malloc(sizeof(stderr_file_.c_str()));
+    std::strcpy(this->bufout->msg, stderr_file_.c_str()); // hard copy
+    bufout->len = stderr_file_.size();
     bufout->valid = true;
-    bufout->len = res.size();
     bufout->type = BUFOUT;
+    return false;
   }
 
+  this->bufout->msg = (char*) std::malloc(sizeof(stdout_file_.c_str()));
+  std::strcpy(this->bufout->msg, stdout_file_.c_str()); // hard copy
+  bufout->len = stdout_file_.size();
+  bufout->valid = true;
+  bufout->type = BUFOUT;
   return true;
 };
 
@@ -100,3 +122,27 @@ std::string Inter::shellExe(const char* cmd) {
   }
   return result;
 };
+
+/* Execute the shell command, and get both its cerr and cout in tmp file */
+int Inter::shellExec(const char* cmd) {
+  std::string scmd(cmd);
+  char tmp_dir[] = "/tmp/stdir.XXXXXX";
+  mkdtemp(tmp_dir);
+  mkdir(tmp_dir, 0777);
+  this->stdout_file_ = std::string(tmp_dir) + "/stdout"; /* both filename */
+  this->stderr_file_ = std::string(tmp_dir) + "/stderr";
+  /* Execute the command: $cmd > stdout_file 2> stderr_file */
+
+  std::string cli = scmd + " > " + stdout_file_ + " 2> " + stderr_file_;
+  this->exit_code_ = system(cli.c_str());
+  this->tmp_dir_ = std::string(tmp_dir);
+  this->valid_exec_ = true;
+  return exit_code_;
+};
+
+void Inter::RemoveTmp() {
+  std::remove(this->stderr_file_.c_str());
+  std::remove(this->stdout_file_.c_str());
+  std::remove(this->tmp_dir_.c_str());
+  this->valid_exec_ = false;
+}

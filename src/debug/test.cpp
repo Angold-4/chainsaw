@@ -78,7 +78,6 @@ void run_case() {
 }
 
 int main() {
-  int tests;
   vector<int> vi = {1, 2, 3, 4, 5};
   debug(vi);
 }
