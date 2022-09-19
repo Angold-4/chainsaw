@@ -50,11 +50,9 @@ void Editor::RefreshScreen() {
     buffer += "\r\n";
   }
 
-
   /* Create a two row status. The first row */
   buffer += "\x1b[0K";
   buffer += "\x1b[7m";
-
 
   char status[80], rstatus[80];
 
@@ -174,6 +172,19 @@ int Editor::Open(char* filename) {
   size_t linecap = 0;
   ssize_t linelen;
 
+  /* Since we're going to clean the row status, 
+   * we do not want if there are any unsaved changes */
+  if (Conf.dirty) {
+    /* Just Save it automatically */
+    SetStatusMessage("Automatically saved file: %s", Conf.filename);
+    save(Conf);
+  }
+
+  /* init the cursor */
+  Conf.rows = nullptr;
+  Conf.numrows = 0;
+  Conf.cx = Conf.cy = 0;
+
   while ((linelen = getline(&line, &linecap, fp)) != -1) {
     /* line by line, when meet newline (\n or \r), replace it with a terminal */
     if (linelen && (line[linelen-1] == '\n' || line[linelen-1] == '\r')) {
@@ -205,6 +216,11 @@ int Editor::LoadOut(char* filename) {
   char *line = NULL;
   size_t linecap = 0;
   ssize_t linelen;
+
+  /* init the cursor */
+  ConfOut.rows = nullptr;
+  ConfOut.numrows = 0;
+  ConfOut.cx = ConfOut.cy = 0;
 
   while ((linelen = getline(&line, &linecap, fp)) != -1) {
     /* line by line, when meet newline (\n or \r), replace it with a terminal */
@@ -531,7 +547,7 @@ int Editor::save(editorConfig& Conf) {
   int fd = open(Conf.filename, O_RDWR|O_CREAT, 0644);
   if (fd == -1) goto writeerr;
 
-  /* Use truncate + a single write call in order to make saving  a bit safer */
+  /* Use truncate + a single write call in order to make saving a bit safer */
   if (ftruncate(fd, len) == -1) goto writeerr;
   if (write(fd, buf, len) != len) goto writeerr;
 

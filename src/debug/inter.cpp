@@ -11,7 +11,6 @@ bool Inter::Exec(char* cmd) {
 
   char cmdb = cmd[1];
 
-
   std::string scmd(cmd); // stack
   std::string filename = getFileName(scmd.substr(2));
 
