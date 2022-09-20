@@ -250,7 +250,7 @@ private:
   void set_cursor(editorConfig& Conf, char* buf, std::string& buffer) {
     /* Finally, put cursor at its current position. */
     int j;
-    int cx = 0;
+    int cx = 1;
     int filerow = Conf.offrow + Conf.cy;
     editRow *row = (filerow >= Conf.numrows) ? NULL : &Conf.rows[filerow];
 

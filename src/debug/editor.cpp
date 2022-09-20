@@ -83,8 +83,8 @@ void Editor::RefreshScreen() {
   }
 
   buffer += "\x1b[0m\r\n";
-  buffer += "\x1b[0K";
 
+  buffer += "\x1b[0K";
   /* Second row depends on Conf.statusmsg and the status message update time */
   int msglen = strlen(Conf.statusmsg);
 
@@ -94,11 +94,10 @@ void Editor::RefreshScreen() {
     std::string sstatusmsg(Conf.statusmsg);
     buffer += sstatusmsg;
   }
-
   buffer += "\x1b[0m\r\n";
-  buffer += "\x1b[0K";
 
   buffer += "\x1b[0K";
+
   buffer += "\x1b[7m";
 
   /* TODO: change empty row into running status (speed, memory usage) */
@@ -106,8 +105,6 @@ void Editor::RefreshScreen() {
   std::string emptyrow(Conf.lmtcol,' ');
   buffer += emptyrow;
   buffer += "\x1b[0m\r\n";
-  buffer += "\x1b[0K";
-
 
   for (y = 0; y < ConfOut.lmtrow; y++) { // 0
     int filerow = ConfOut.offrow + y;
@@ -154,8 +151,8 @@ void Editor::RefreshScreen() {
   } else {
     set_cursor(Conf, buf, buffer);
   }
-  
-  write(STDOUT_FILENO, buffer.c_str(), buffer.size());
+
+  write(STDOUT_FILENO, buffer.c_str(), buffer.size()+1);
 
   buffer.clear();
 }
