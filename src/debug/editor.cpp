@@ -11,8 +11,12 @@ void Editor::RefreshScreen() {
   buffer += "\x1b[H";    // Go home
 
   for (y = 0; y < Conf.lmtrow; y++) { // 0
-    int filerow = Conf.offrow + y;
-    if (filerow >= Conf.numrows) { // init case (first time call)
+
+    /* offrow means the current row offset of file */
+
+    int filerow = Conf.offrow + y; // the current row(line) in the file
+
+    if (filerow >= Conf.numrows) {
       if (Conf.numrows == 0 && y == Conf.lmtrow/2) { // (print welcome msg in the 1/2 pos)
 	char welcome[80];
 	int welcomelen = snprintf(welcome, sizeof(welcome),
@@ -24,7 +28,6 @@ void Editor::RefreshScreen() {
 	}
 	while (padding--) buffer += " ";
 	std::string swelcome(welcome);
-	// abAppend(&ab, welcome, welcomelen);
 	buffer += swelcome;
       } else {
 	buffer += "~\x1b[0K\r\n"; // ~ (empty)
@@ -32,13 +35,15 @@ void Editor::RefreshScreen() {
       continue;
     }
 
+    /* if we already have some rows (numrows > 0) */
+
     r = &Conf.rows[filerow];
 
     int len = r->rsize - Conf.offcol; // offset
 
-    if (len > 0) {
-      if (len > Conf.lmtcol) len = Conf.lmtcol;
-      char *c = r->render + Conf.offcol; // start point
+    if (len > 0) { /* if offset is greater than rsize, then we should print nothing */
+      if (len > Conf.lmtcol) len = Conf.lmtcol; // fix it
+      char *c = r->render + Conf.offcol;
       int j;
       for (j = 0; j < len; j++) {
 	buffer += *(c+j);
@@ -60,7 +65,7 @@ void Editor::RefreshScreen() {
       Conf.filename, Conf.numrows, Conf.dirty ? "(modified)" : "");
 
   int rlen = snprintf(rstatus, sizeof(rstatus), "%d/%d",
-      Conf.offrow + Conf.cy + 1, Conf.numrows);
+      Conf.offrow + Conf.cy, Conf.numrows);
 
   if (len > Conf.lmtcol) len = Conf.lmtcol;
 
@@ -86,7 +91,6 @@ void Editor::RefreshScreen() {
   if (Conf.commandst) {
     buffer += Conf.command;
   } else if (msglen && time(NULL) - Conf.statusmsg_time < 2) {
-    // abAppend(&ab, Conf.statusmsg, msglen <= Conf.lmtcol ? msglen : Conf.lmtcol);
     std::string sstatusmsg(Conf.statusmsg);
     buffer += sstatusmsg;
   }
@@ -96,20 +100,23 @@ void Editor::RefreshScreen() {
 
   buffer += "\x1b[0K";
   buffer += "\x1b[7m";
+
   /* TODO: change empty row into running status (speed, memory usage) */
+
   std::string emptyrow(Conf.lmtcol,' ');
   buffer += emptyrow;
   buffer += "\x1b[0m\r\n";
   buffer += "\x1b[0K";
 
+
   for (y = 0; y < ConfOut.lmtrow; y++) { // 0
     int filerow = ConfOut.offrow + y;
 
-    if (filerow >= ConfOut.numrows) { // init case (first time call)
-      if (ConfOut.numrows == 0 && y == ConfOut.lmtrow/2) { // (print welcome msg in the 1/3 pos)
+    if (filerow >= ConfOut.numrows) {
+      if (ConfOut.numrows == 0 && y == ConfOut.lmtrow/2) { // (print buffer msg in the 1/2 pos)
 	char welcome[80];
 	int welcomelen = snprintf(welcome, sizeof(welcome),
-	    "Chainsaw debug outbuffer -- version %s\x1b[0K\r\n", CHAINSAW_VERSION);
+	    "Debug Output Buffer");
 	int padding = (ConfOut.lmtcol-welcomelen)/2;
 	if (padding) {
 	  buffer += "";
@@ -119,9 +126,9 @@ void Editor::RefreshScreen() {
 	std::string swelcome(welcome);
 	buffer += swelcome;
       } else {
-	buffer += "\x1b[0K\r\n"; // ~ (empty)
+	buffer += "\x1b[0K\r\n"; //  (empty)
       }
-      break;
+      continue;
     }
 
     r = &ConfOut.rows[filerow];
@@ -147,8 +154,10 @@ void Editor::RefreshScreen() {
   } else {
     set_cursor(Conf, buf, buffer);
   }
+  
+  write(STDOUT_FILENO, buffer.c_str(), buffer.size());
 
-  std::cout << buffer << std::endl;
+  buffer.clear();
 }
 
 /* Load the specified program in the editor memory and returns 0 on success */
@@ -181,6 +190,7 @@ int Editor::Open(char* filename) {
   }
 
   /* init the cursor */
+  delete Conf.rows;
   Conf.rows = nullptr;
   Conf.numrows = 0;
   Conf.cx = Conf.cy = 0;
@@ -218,6 +228,7 @@ int Editor::LoadOut(char* filename) {
   ssize_t linelen;
 
   /* init the cursor */
+  delete ConfOut.rows;
   ConfOut.rows = nullptr;
   ConfOut.numrows = 0;
   ConfOut.cx = ConfOut.cy = 0;
@@ -326,9 +337,9 @@ void Editor::focusKeyPress(int c, editorConfig& Conf) {
     case ENTER:     /* Enter or Exec */
       if (Conf.commandst) { /* Transfer the cmd msg to outside */
 	transferCmd();
-	break;
+      } else if (!outMode) {
+	insertNewline(Conf);
       }
-      insertNewline(Conf);
       break;
     case CTRL_C:    /* Ctrl-c */
       /* Enter / Quit the command mode */
@@ -466,7 +477,7 @@ void Editor::rowInsertChar(editRow *row, int pos, int c, editorConfig& Conf) {
     row->chars = (char*) std::realloc(row->chars, row->size+padlen+2);
     memset(row->chars+row->size, ' ', padlen); // write padlen ' ' into chars end
     row->chars[row->size+padlen+1] = '\0';
-    row->size = padlen+1;
+    row->size += padlen+1;
   } else {
     row->chars = (char*) std::realloc(row->chars, row->size+2); 
     std::memmove(row->chars+pos+1, row->chars+pos, row->size-pos+1);

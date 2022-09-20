@@ -11,6 +11,8 @@
 #include <termios.h>
 #include <sstream>
 #include <cstdlib>
+#include <string.h>
+#include <csignal>
 #include <stdio.h>
 #include <stdarg.h>
 #include <unistd.h>
@@ -202,13 +204,26 @@ private:
       perror("Unable to query the screen for size (ioctl failed))");
       Exit(1);
     }
-    Conf.cmdrow = Conf.lmtrow/2 - 1;
+
+    /*  -----------------------
+     * |      editor (buf)     |
+     *  -----------------------   <- lmtrow/2
+     *  ~~~~~~~~~~~~~~~~~~~~~~~   <- 3 intermediate later
+     *  -----------------------   <- lmtrow/2 - 3
+     * |      outbuffer        |
+     *  -----------------------
+     */
+
+    int tmpmax = Conf.lmtrow;
+
     ConfOut.lmtrow = Conf.lmtrow /= 2;
+
+
     ConfOut.lmtcol = Conf.lmtcol;
-    ConfOut.lmtrow -= 5; // Get room for status bar.
+    ConfOut.lmtrow -= (tmpmax % 2) ? 3 : 4; // Get room for status bar.
   };
 
-  void handleSigWinCh(int unused __attribute__((unused))) { 
+  void handleSigWinCh() { 
     updateWindowSize();
     if (Conf.cy > Conf.lmtrow) Conf.cy = Conf.lmtrow - 1;
     if (ConfOut.cy > ConfOut.lmtrow) ConfOut.cy = ConfOut.lmtrow - 1;
@@ -235,7 +250,7 @@ private:
   void set_cursor(editorConfig& Conf, char* buf, std::string& buffer) {
     /* Finally, put cursor at its current position. */
     int j;
-    int cx = 1;
+    int cx = 0;
     int filerow = Conf.offrow + Conf.cy;
     editRow *row = (filerow >= Conf.numrows) ? NULL : &Conf.rows[filerow];
 
@@ -247,12 +262,14 @@ private:
     }
 
     if (&Conf == &this->ConfOut) {
-      snprintf(buf, sizeof(buf), "\x1b[%d;%dH", Conf.cy + Conf.lmtrow+8, cx); // set the position of the cursor
+      snprintf(buf, sizeof(buf), "\033[%d;%dH", Conf.cy + this->Conf.lmtrow + 4, cx); // set the position of the cursor
+      // SetStatusMessage("Cursor Out: %d, %d, offrow: %d", Conf.cy + this->Conf.lmtrow + 3, cx, Conf.offrow);
     } else { 
-      snprintf(buf, sizeof(buf), "\x1b[%d;%dH", Conf.cy, cx); // set the position of the cursor
+      snprintf(buf, sizeof(buf), "\x1b[%d;%dH", Conf.cy+1, cx); // set the position of the cursor
+      // SetStatusMessage("Cursor: %d, %d, offrow: %d", Conf.cy, cx, Conf.offrow);
     }
 
-    std::string sbuf(buf);
+    std::string sbuf(buf, strlen(buf));
     buffer += sbuf;
     buffer += "\x1b[?25h"; // show the cursor
   };
@@ -289,6 +306,8 @@ public:
 protected:
   bool infile(std::string filename);
   bool outexe(std::string filename);
+
+  void parsingTime(std::string out);
 
   std::string shellExe(const char* cmd);
   int shellExec(const char* cmd);

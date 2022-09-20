@@ -70,7 +70,7 @@ bool Inter::outexe(std::string filename) {
 
   ret_code = shellExec(debug_compile);
 
-  if (ret_code || (file2str(stderr_file_).size() && valid_exec_)) {
+  if (ret_code) {
     std::cout << this->stderr_file_ << '\n';
     this->bufout->msg = (char*) std::malloc(sizeof(stderr_file_.c_str()));
     std::strcpy(this->bufout->msg, stderr_file_.c_str()); // hard copy
@@ -89,16 +89,14 @@ bool Inter::outexe(std::string filename) {
   /* Execute */
   /* TODO: time parser, get the load, execute time, mem usage */
 
-  ret_code = shellExec("./test");
+  ret_code = shellExec("/usr/bin/time -l ./test");
 
-  if (true) {
-    this->bufout->msg = (char*) std::malloc(sizeof(stderr_file_.c_str()));
-    std::strcpy(this->bufout->msg, stderr_file_.c_str()); // hard copy
-    bufout->len = stderr_file_.size();
-    bufout->valid = true;
-    bufout->type = BUFOUT;
-    return false;
-  }
+  this->bufout->msg = (char*) std::malloc(sizeof(stderr_file_.c_str()));
+  std::strcpy(this->bufout->msg, stderr_file_.c_str()); // hard copy
+  bufout->len = stderr_file_.size();
+  bufout->valid = true;
+  bufout->type = BUFOUT;
+  return false;
 
   this->bufout->msg = (char*) std::malloc(sizeof(stdout_file_.c_str()));
   std::strcpy(this->bufout->msg, stdout_file_.c_str()); // hard copy
@@ -130,10 +128,11 @@ int Inter::shellExec(const char* cmd) {
   mkdir(tmp_dir, 0777);
   this->stdout_file_ = std::string(tmp_dir) + "/stdout"; /* both filename */
   this->stderr_file_ = std::string(tmp_dir) + "/stderr";
+
   /* Execute the command: $cmd > stdout_file 2> stderr_file */
 
-  std::string cli = scmd + " > " + stdout_file_ + " 2> " + stderr_file_;
-  this->exit_code_ = system(cli.c_str());
+  std::string cli = scmd + " 2> " + stderr_file_ + " 1> " + stdout_file_;
+  this->exit_code_ = std::system(cli.c_str());
   this->tmp_dir_ = std::string(tmp_dir);
   this->valid_exec_ = true;
   return exit_code_;
