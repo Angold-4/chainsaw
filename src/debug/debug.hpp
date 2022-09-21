@@ -1,12 +1,14 @@
 #define CHAINSAW_VERSION "0.3.0" 
 #define DEBUG_COMPILE "g++ -std=c++17 -Wshadow -Wall -O2 -D DEBUG "
 #define QUIT_TIMES 3
+
 #define BUFFINIT {NULL, 0, false, 0}
 #define BUFNULL 0
 #define OUTBUF 1
 #define OUTCMD 2
 #define OUTLOAD 3
 #define BUFOUT 4
+#define DISPLAY 5
 
 #include <termios.h>
 #include <sstream>
@@ -93,19 +95,13 @@ struct buffer {
   size_t len;
   bool valid;
   int type;  /* 0 -> OUTNULL, 1 -> OUTBUF, 2 -> OUTCMD, 3 -> OUTLOAD */
+  /* 4 -> BUFOUT, 5 -> DISPLAY */
 };
-
 
 class Editor {
 public:
   /* Do not use std::string (hard to debug) */
 
-  /* If editor is willing to send the msg to the outside, it will give a value to buffer */
-  buffer* outbuffer;
-  buffer* command;
-
-  struct editorConfig Conf;
-  struct editorConfig ConfOut; /* Config for the out (Compile error, debug output)*/
   bool outMode;
 
   Editor(buffer* out, buffer* cmd) : outbuffer(out), command(cmd){};
@@ -125,6 +121,7 @@ public:
     Conf.command = "";
     Conf.commandst = false;
     outMode = false;
+    this->display_buffer = BUFFINIT;
     updateWindowSize();
   };
 
@@ -186,6 +183,8 @@ public:
   void Exit(int status);
 
 protected:
+  void displayAppend(const char* s, int len);
+  void displayFree();
   void insertNewline(editorConfig& Conf);
   int save(editorConfig& Conf);
   void rowAppendString(editRow* erow, char *s, size_t len);
@@ -199,6 +198,15 @@ protected:
   void focusKeyPress(int c, editorConfig& Conf);
 
 private:
+  /* If editor is willing to send the msg to the outside, it will give a value to buffer */
+  buffer* outbuffer;
+  buffer* command;
+
+  buffer display_buffer;
+
+  struct editorConfig Conf;
+  struct editorConfig ConfOut; /* Config for the out (Compile error, debug output)*/
+
   void updateWindowSize() {
     if (getWindowSize(STDIN_FILENO, STDOUT_FILENO, &Conf.lmtrow, &Conf.lmtcol)) {
       perror("Unable to query the screen for size (ioctl failed))");
@@ -215,10 +223,7 @@ private:
      */
 
     int tmpmax = Conf.lmtrow;
-
     ConfOut.lmtrow = Conf.lmtrow /= 2;
-
-
     ConfOut.lmtcol = Conf.lmtcol;
     ConfOut.lmtrow -= (tmpmax % 2) ? 3 : 4; // Get room for status bar.
   };
@@ -247,7 +252,7 @@ private:
     }
   };
 
-  void set_cursor(editorConfig& Conf, char* buf, std::string& buffer) {
+  void set_cursor(editorConfig& Conf, char* buf) {
     /* Finally, put cursor at its current position. */
     int j;
     int cx = 1;
@@ -261,17 +266,18 @@ private:
       }
     }
 
+    int buflen;
+
     if (&Conf == &this->ConfOut) {
-      snprintf(buf, sizeof(buf), "\033[%d;%dH", Conf.cy + this->Conf.lmtrow + 4, cx); // set the position of the cursor
+      buflen = snprintf(buf, sizeof(buf), "\033[%d;%dH", Conf.cy + this->Conf.lmtrow + 4, cx); // set the position of the cursor
       // SetStatusMessage("Cursor Out: %d, %d, offrow: %d", Conf.cy + this->Conf.lmtrow + 3, cx, Conf.offrow);
     } else { 
-      snprintf(buf, sizeof(buf), "\x1b[%d;%dH", Conf.cy+1, cx); // set the position of the cursor
+      buflen = snprintf(buf, sizeof(buf), "\x1b[%d;%dH", Conf.cy+1, cx); // set the position of the cursor
       // SetStatusMessage("Cursor: %d, %d, offrow: %d", Conf.cy, cx, Conf.offrow);
     }
 
-    std::string sbuf(buf, strlen(buf));
-    buffer += sbuf;
-    buffer += "\x1b[?25h"; // show the cursor
+    displayAppend(buf, buflen);
+    displayAppend("\x1b[?25h", 6);
   };
 
   /* Free row's heap allocated stuff. */

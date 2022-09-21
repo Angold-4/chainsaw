@@ -5,10 +5,13 @@ void Editor::RefreshScreen() {
   editRow *r;
   char buf[32];
 
-  std::string buffer = ""; /* Dynamic append to the buffer */
+  this->display_buffer = BUFFINIT;
+  this->display_buffer.type = DISPLAY;
 
-  buffer += "\x1b[?25l"; // Hide cursor
-  buffer += "\x1b[H";    // Go home
+
+  displayAppend("\x1b[?25l", 6); // Hide cursor
+  displayAppend("\x1b[H", 3);    // Go home
+
 
   for (y = 0; y < Conf.lmtrow; y++) { // 0
 
@@ -22,15 +25,20 @@ void Editor::RefreshScreen() {
 	int welcomelen = snprintf(welcome, sizeof(welcome),
 	    "Chainsaw debug editor -- version %s\x1b[0K\r\n", CHAINSAW_VERSION);
 	int padding = (Conf.lmtcol-welcomelen)/2;
+
 	if (padding) {
-	  buffer += "~";
+	  displayAppend("~", 1);
 	  padding--;
 	}
-	while (padding--) buffer += " ";
+
+	while (padding--) {
+	  displayAppend(" ", 1);
+	}
+
+	displayAppend(welcome, welcomelen);
 	std::string swelcome(welcome);
-	buffer += swelcome;
       } else {
-	buffer += "~\x1b[0K\r\n"; // ~ (empty)
+	displayAppend("~\x1b[0K\r\n", 7);
       }
       continue;
     }
@@ -46,18 +54,18 @@ void Editor::RefreshScreen() {
       char *c = r->render + Conf.offcol;
       int j;
       for (j = 0; j < len; j++) {
-	buffer += *(c+j);
+	displayAppend(c+j, 1);
       }
     }
 
-    buffer += "\x1b[39m";
-    buffer += "\x1b[0K";
-    buffer += "\r\n";
+    displayAppend("\x1b[39m",5);
+    displayAppend("\x1b[0K",4);
+    displayAppend("\r\n",2);
   }
 
   /* Create a two row status. The first row */
-  buffer += "\x1b[0K";
-  buffer += "\x1b[7m";
+  displayAppend("\x1b[0K",4);
+  displayAppend("\x1b[7m",4);
 
   char status[80], rstatus[80];
 
@@ -70,41 +78,40 @@ void Editor::RefreshScreen() {
   if (len > Conf.lmtcol) len = Conf.lmtcol;
 
   std::string ss(status); std::string rs(rstatus);
-  buffer += ss;
+  displayAppend(status, len);
 
   while (len < Conf.lmtcol) {
     if (Conf.lmtcol - len == rlen) {
-      buffer += rs;
+      displayAppend(rstatus, rlen);
       break;
     } else {
-      buffer += " ";
+      displayAppend(" ", 1);
       len++;
     }
   }
 
-  buffer += "\x1b[0m\r\n";
-
-  buffer += "\x1b[0K";
+  displayAppend("\x1b[0m\r\n",6);
+  displayAppend("\x1b[0K",4);
   /* Second row depends on Conf.statusmsg and the status message update time */
   int msglen = strlen(Conf.statusmsg);
 
   if (Conf.commandst) {
-    buffer += Conf.command;
+    displayAppend(Conf.command.c_str(), Conf.command.size());
   } else if (msglen && time(NULL) - Conf.statusmsg_time < 2) {
     std::string sstatusmsg(Conf.statusmsg);
-    buffer += sstatusmsg;
+    displayAppend(Conf.statusmsg, msglen <= Conf.lmtcol ? msglen : Conf.lmtcol);
   }
-  buffer += "\x1b[0m\r\n";
 
-  buffer += "\x1b[0K";
+  displayAppend("\x1b[0m\r\n",6);
+  displayAppend("\x1b[0K",4);
+  displayAppend("\x1b[7m",4);
 
-  buffer += "\x1b[7m";
 
   /* TODO: change empty row into running status (speed, memory usage) */
 
   std::string emptyrow(Conf.lmtcol,' ');
-  buffer += emptyrow;
-  buffer += "\x1b[0m\r\n";
+  displayAppend(emptyrow.c_str(), Conf.lmtcol);
+  displayAppend("\x1b[0m\r\n",6);
 
   for (y = 0; y < ConfOut.lmtrow; y++) { // 0
     int filerow = ConfOut.offrow + y;
@@ -115,15 +122,20 @@ void Editor::RefreshScreen() {
 	int welcomelen = snprintf(welcome, sizeof(welcome),
 	    "Debug Output Buffer");
 	int padding = (ConfOut.lmtcol-welcomelen)/2;
+
 	if (padding) {
-	  buffer += "";
+	  displayAppend(" ", 1);
 	  padding--;
 	}
-	while (padding--) buffer += " ";
+
+	while (padding--) {
+	  displayAppend(" ", 1);
+	}
+
 	std::string swelcome(welcome);
-	buffer += swelcome;
+	displayAppend(welcome, welcomelen);
       } else {
-	buffer += "\x1b[0K\r\n"; //  (empty)
+	displayAppend("\x1b[0K\r\n", 6);
       }
       continue;
     }
@@ -137,24 +149,24 @@ void Editor::RefreshScreen() {
       char *c = r->render + ConfOut.offcol; // start point
       int j;
       for (j = 0; j < len; j++) {
-	buffer += *(c+j);
+	displayAppend(c+j, 1);
       }
     }
 
-    buffer += "\x1b[39m";
-    buffer += "\x1b[0K";
-    buffer += "\r\n";
+    displayAppend("\x1b[39m",5);
+    displayAppend("\x1b[0K",4);
+    displayAppend("\r\n",2);
   }
 
   if (this->outMode) {
-    set_cursor(ConfOut, buf, buffer);
+    set_cursor(ConfOut, buf);
   } else {
-    set_cursor(Conf, buf, buffer);
+    set_cursor(Conf, buf);
   }
 
-  write(STDOUT_FILENO, buffer.c_str(), buffer.size()+1);
-
-  buffer.clear();
+  // write(STDOUT_FILENO, buffer.c_str(), buffer.size()+1);
+  write(STDOUT_FILENO, this->display_buffer.msg, this->display_buffer.len);
+  displayFree();
 }
 
 /* Load the specified program in the editor memory and returns 0 on success */
@@ -508,6 +520,7 @@ void Editor::InsertChar(int c, editorConfig& Conf) {
   Conf.dirty++;
 };
 
+
 /* Inserting a newline is slightly complex as we have to handling inserting a 
  * newline at the middle of a line */
 void Editor::insertNewline(editorConfig& Conf) {
@@ -763,3 +776,18 @@ void Editor::delCharCmd() {
   if (!Conf.commandst || Conf.command.size() <= 1) { return; } // keep the ':'
   Conf.command.erase(Conf.command.size()-1);
 }
+
+/* Self-allocated memory for the display buffer */
+void Editor::displayAppend(const char* s, int len) {
+  char *newbuf = (char *) std::realloc(
+      this->display_buffer.msg, this->display_buffer.len + len);
+
+  if (newbuf == nullptr) return;
+  memcpy(newbuf+this->display_buffer.len, s, len);
+  this->display_buffer.msg = newbuf;
+  this->display_buffer.len += len;
+};
+
+void Editor::displayFree() {
+  std::free(this->display_buffer.msg);
+};
