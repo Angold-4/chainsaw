@@ -104,13 +104,48 @@ void Editor::RefreshScreen() {
 
   displayAppend("\x1b[0m\r\n",6);
   displayAppend("\x1b[0K",4);
-  displayAppend("\x1b[7m",4);
 
+  if (!*this->errFree) {
+    if (!(*this->runtime)[0].size()) {
+      /* nothing */
+      displayAppend("\x1b[7m", 4);
+      std::string emptyrow(Conf.lmtcol, ' ');
+      displayAppend(emptyrow.c_str(), Conf.lmtcol);
+    } else {
+      displayAppend("\x1b[33m", 5); // yellow
+      displayAppend("\x1b[7m", 4);
+      std::string exectime = "time elapsed: " + (*this->runtime)[2] + "s";
+      std::string maxrss = "maximum RSS: " + (*this->runtime)[1] + "kb";
+      displayAppend(exectime.c_str(), exectime.size());
 
-  /* TODO: change empty row into running status (speed, memory usage) */
+      displayAppend("\x1b[0m",4);
+      displayAppend("\x1b[7m", 4);
 
-  std::string emptyrow(Conf.lmtcol,' ');
-  displayAppend(emptyrow.c_str(), Conf.lmtcol);
+      int emptysize = Conf.lmtcol - exectime.size() - maxrss.size();
+      std::string emptyrow(emptysize, ' ');
+      displayAppend(emptyrow.c_str(), emptysize);
+
+      displayAppend("\x1b[34m", 5); // blue
+      displayAppend(maxrss.c_str(), maxrss.size());
+    }
+  } else {
+    displayAppend("\x1b[31m", 5);
+    displayAppend("\x1b[7m", 4);
+    std::string emptyrow(Conf.lmtcol/2 - 10,' ');
+    std::string errType = (*this->errFree == COMPILE) ? "Compiling" : "Running";
+    std::string errormsg = "Error Occured While " + errType + " This Program:";
+    *this->errFree = ERRFREE;
+
+    int full = (Conf.lmtcol - errormsg.size());
+    int mid = full / 2;
+    if (full % 2) {
+      mid += 1;
+    }
+    displayAppend(emptyrow.c_str(), mid);
+    displayAppend(errormsg.c_str(), errormsg.size());
+    displayAppend(emptyrow.c_str(), mid-1);
+  }
+
   displayAppend("\x1b[0m\r\n",6);
 
   for (y = 0; y < ConfOut.lmtrow; y++) { // 0
@@ -344,6 +379,7 @@ void Editor::focusKeyPress(int c, editorConfig& Conf) {
 
   switch(c) {
     case ENTER:     /* Enter or Exec */
+      *this->runtime = {"", "", ""}; // refresh the runtime
       if (Conf.commandst) { /* Transfer the cmd msg to outside */
 	transferCmd();
       } else if (!outMode) {

@@ -71,6 +71,7 @@ bool Inter::outexe(std::string filename) {
   ret_code = shellExec(debug_compile);
 
   if (ret_code) {
+    *this->errFree = COMPILE;
     std::cout << this->stderr_file_ << '\n';
     this->bufout->msg = (char*) std::malloc(sizeof(stderr_file_.c_str()));
     std::strcpy(this->bufout->msg, stderr_file_.c_str()); // hard copy
@@ -84,26 +85,39 @@ bool Inter::outexe(std::string filename) {
   std::remove(this->stdout_file_.c_str());
   std::remove(this->tmp_dir_.c_str());
 
-  this->valid_exec_ = false;
 
   /* Execute */
-  /* TODO: time parser, get the load, execute time, mem usage */
-
   ret_code = shellExec("/usr/bin/time -l ./test");
+
+  if (ret_code) {
+    *this->errFree = RUNTIME;
+  } else {
+    /* parse the output (time, max rss) */
+#ifdef MAC_OS
+    this->parseMac();
+#endif
+
+#ifdef LINUX
+    this->parseLinux();
+#endif
+  }
+
 
   this->bufout->msg = (char*) std::malloc(sizeof(stderr_file_.c_str()));
   std::strcpy(this->bufout->msg, stderr_file_.c_str()); // hard copy
   bufout->len = stderr_file_.size();
   bufout->valid = true;
   bufout->type = BUFOUT;
-  return false;
+  return true;
 
+  /*
   this->bufout->msg = (char*) std::malloc(sizeof(stdout_file_.c_str()));
   std::strcpy(this->bufout->msg, stdout_file_.c_str()); // hard copy
   bufout->len = stdout_file_.size();
   bufout->valid = true;
   bufout->type = BUFOUT;
   return true;
+  */
 };
 
 /* Execute the shell command and get its return */
@@ -134,7 +148,6 @@ int Inter::shellExec(const char* cmd) {
   std::string cli = scmd + " 2> " + stderr_file_ + " 1> " + stdout_file_;
   this->exit_code_ = std::system(cli.c_str());
   this->tmp_dir_ = std::string(tmp_dir);
-  this->valid_exec_ = true;
   return exit_code_;
 };
 
@@ -142,5 +155,66 @@ void Inter::RemoveTmp() {
   std::remove(this->stderr_file_.c_str());
   std::remove(this->stdout_file_.c_str());
   std::remove(this->tmp_dir_.c_str());
-  this->valid_exec_ = false;
-}
+};
+
+void Inter::parseMac() {
+  std::ifstream file(this->stderr_file_);
+  std::stringstream buffer;
+  buffer << file.rdbuf();
+
+  std::string stdoe = buffer.str();
+  std::string maxrss = "";
+  std::string exetime = "";
+
+  /* 1. get the max rss */
+  int end = stdoe.find(MACKEY);
+  if (end == std::string::npos ) {
+    return;
+  }
+
+  for (int i = end-3; i > 0; i--) {
+    char tmp = stdoe[i];
+    if (tmp >= 48 && tmp <= 57 || tmp == '.') {
+      /* is a digit */
+      maxrss += tmp;
+    } else {
+      break;
+    }
+  }
+  std::reverse(maxrss.begin(), maxrss.end());
+
+  /* 2. get the exec time */
+  int tend = stdoe.rfind(MACREAL, end);
+  if (tend == std::string::npos) {
+    return;
+  }
+
+  for (int i = tend-2; i > 0; i--) {
+    char tmp = stdoe[i];
+    if (tmp >= 48 && tmp <= 57 || tmp == '.') {
+      /* is a digit */
+      exetime += tmp;
+    } else {
+      break;
+    }
+  }
+  std::reverse(maxrss.begin(), maxrss.end());
+
+  /* 3. get out file */
+  std::string out = stdoe.substr(0, tend-exetime.size()-1); /* the stdout */
+
+  std::ofstream outfile;
+  outfile.open(this->stderr_file_);
+  outfile << out;
+  outfile.close();
+
+  out.clear();
+  stdoe.clear();
+  
+  (*this->runtime)[0] = "MAC";
+  (*this->runtime)[1] = maxrss.substr(0, maxrss.size()-3);
+  (*this->runtime)[2] = exetime;
+};
+
+void Inter::parseLinux() {
+};

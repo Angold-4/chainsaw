@@ -2,6 +2,8 @@
 #define DEBUG_COMPILE "g++ -std=c++17 -Wshadow -Wall -O2 -D DEBUG "
 #define QUIT_TIMES 3
 
+#define VS std::vector<std::string>
+
 #define BUFFINIT {NULL, 0, false, 0}
 #define BUFNULL 0
 #define OUTBUF 1
@@ -9,6 +11,16 @@
 #define OUTLOAD 3
 #define BUFOUT 4
 #define DISPLAY 5
+
+#define ERRFREE 0
+#define COMPILE 1
+#define RUNTIME 2
+
+#define MACOSTIME "/usr/bin/time -l "
+#define LINUXTIME "/usr/bin/time -v "
+
+#define MACKEY "maximum resident"
+#define MACREAL "real"
 
 #include <termios.h>
 #include <sstream>
@@ -30,6 +42,7 @@
 #include <fcntl.h>
 #include <set>
 #include <cstdio>
+#include <vector>
 #include <memory>
 #include <stdexcept>
 #include <array>
@@ -104,7 +117,8 @@ public:
 
   bool outMode;
 
-  Editor(buffer* out, buffer* cmd) : outbuffer(out), command(cmd){};
+  Editor(buffer* out, buffer* cmd, int* errFree, VS* runtime)
+    : outbuffer(out), command(cmd), errFree(errFree), runtime(runtime) {};
 
   void RefreshScreen();
 
@@ -197,12 +211,18 @@ protected:
   void delCharCmd();
   void focusKeyPress(int c, editorConfig& Conf);
 
+
 private:
   /* If editor is willing to send the msg to the outside, it will give a value to buffer */
   buffer* outbuffer;
   buffer* command;
 
   buffer display_buffer;
+
+
+  int *errFree;
+
+  VS* runtime;
 
   struct editorConfig Conf;
   struct editorConfig ConfOut; /* Config for the out (Compile error, debug output)*/
@@ -292,18 +312,12 @@ private:
  * and give the output to the editor. */
 class Inter {
 public:
-  /* Change all of the ipc msgs into a pointer buffer */
-  buffer* command;
-  buffer* outbuffer;
-  buffer* outload;
-  buffer* bufout;
-
   void init() {
     this->infiles = {};
   };
 
-  Inter(std::string file, buffer* out, buffer* command, buffer* outload, buffer* bufout) : execfile(file), 
-	outbuffer(out), command(command), outload(outload),  bufout(bufout) {};
+  Inter(std::string file, buffer* out, buffer* command, buffer* outload, buffer* bufout, int* errFree, VS* runtime) 
+    : execfile(file), outbuffer(out), command(command), outload(outload),  bufout(bufout), errFree(errFree), runtime(runtime) {};
 
   bool Exec(char* cmd);
 
@@ -313,7 +327,8 @@ protected:
   bool infile(std::string filename);
   bool outexe(std::string filename);
 
-  void parsingTime(std::string out);
+  void parseMac();
+  void parseLinux();
 
   std::string shellExe(const char* cmd);
   int shellExec(const char* cmd);
@@ -324,7 +339,15 @@ private:
   std::string stdout_file_;
   std::string stderr_file_;
   std::string tmp_dir_;
-  bool valid_exec_;
+  int *errFree;
+  VS* runtime;
+
+  /* Change all of the ipc msgs into a pointer buffer */
+  buffer* command;
+  buffer* outbuffer;
+  buffer* outload;
+  buffer* bufout;
+  int* errType;
 
   std::set<std::string> infiles;
 

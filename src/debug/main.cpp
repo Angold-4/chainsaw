@@ -42,9 +42,13 @@ int main(int argc, char **argv) {
   buffer OutLoad = BUFFINIT;  /* Inter -> Editor */
   buffer BufOut = BUFFINIT;   /* Inter -> Editor */
 
+  int errFree = ERRFREE;      /* Inter -> Editor */
+
+  VS runtime(3, "");         /* Inter -> Editor */
+
   execName += ".cpp";
-  Inter* inter = new Inter(execName, &Outbuffer, &Command, &OutLoad, &BufOut);
-  Editor* editor = new Editor(&Outbuffer, &Command);
+  Inter* inter = new Inter(execName, &Outbuffer, &Command, &OutLoad, &BufOut, &errFree, &runtime);
+  Editor* editor = new Editor(&Outbuffer, &Command, &errFree, &runtime);
 
   inter->init();
   editor->init();
