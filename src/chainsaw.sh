@@ -258,14 +258,16 @@ if [[ $# -eq 2 ]]; then
 		echo -e "${RED} ${SUCCESS}/${number} test(s) passed."
 	    fi
 	    ;;
-	*)
-	    echo "chainsaw: '$1' is not a chainsaw command. See 'chainsaw help'."
-	    ;;
+
 	debug)
 	    if [[ ! -e ~/debug ]]; then
 	      mkdir debug
 	    fi
 	    ~/Library/Chainsaw/csdebug ${2}
+	    ;;
+
+	*)
+	    echo "chainsaw: '$1' is not a chainsaw command. See 'chainsaw help'."
 	    ;;
     esac
 fi

@@ -5,7 +5,7 @@
 //
 // Identification: src/cf.cpp
 //
-// Last Modified : 2022.8.20 Jiawei Wang
+// Last Modified : 2022.9.30 Jiawei Wang
 //
 // Copyright (c) 2022 Angold-4
 //
@@ -67,6 +67,7 @@ void *curlPre(void* url) {
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curlWriter);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &curlBuffer);
     curl_easy_perform(curl);
+
 
     int fpre = curlBuffer.find("<pre>");
     int lpre = curlBuffer.rfind("</pre>", fpre);
@@ -156,7 +157,7 @@ std::string Chainsaw::new_parse_tests(std::string newpreblk) {
   while (true) {
     end_div = newpreblk.find("</div>", end_div+6);
     start = newpreblk.rfind("\">", end_div);
-    if (end_div - start == 2) break;
+    if (end_div + 7 > newpreblk.size()) break;
 
     ret += newpreblk.substr(start+2, end_div-start-2);
     ret += '\n';
