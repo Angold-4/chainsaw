@@ -223,6 +223,9 @@ void Inter::parseMac() {
 };
 
 void Inter::parseLinux() {
+<<<<<<< HEAD
+
+=======
   std::ifstream file(this->stderr_file_);
   std::stringstream buffer;
   buffer << file.rdbuf();
@@ -283,4 +286,5 @@ void Inter::parseLinux() {
   (*this->runtime)[0] = "LINUX";
   (*this->runtime)[1] = maxrss;
   (*this->runtime)[2] = exetime;
+>>>>>>> e477cd274142a147aa0dadd6a22c80d8c78638da
 };
