@@ -1,4 +1,4 @@
-#define CHAINSAW_VERSION "0.3.0" 
+#define CHAINSAW_VERSION "0.4.0" 
 #define DEBUG_COMPILE "g++ -std=c++17 -Wshadow -Wall -O2 -D DEBUG "
 #define QUIT_TIMES 3
 
@@ -22,7 +22,12 @@
 #define MACKEY "maximum resident"
 #define MACREAL "real"
 
+#define LINUXKEY "Average resident"
+#define LINUXSHARE "Average shared"
+#define LINUXBEG "Command being"
+
 #include <termios.h>
+#include <algorithm>
 #include <sstream>
 #include <cstdlib>
 #include <string.h>

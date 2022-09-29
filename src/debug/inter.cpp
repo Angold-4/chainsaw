@@ -87,7 +87,13 @@ bool Inter::outexe(std::string filename) {
 
 
   /* Execute */
+#ifdef MAC_OS
   ret_code = shellExec("/usr/bin/time -l ./test");
+#endif
+
+#ifdef LINUX
+  ret_code = shellExec("/usr/bin/time -v ./test");
+#endif
 
   if (ret_code) {
     *this->errFree = RUNTIME;
@@ -101,7 +107,6 @@ bool Inter::outexe(std::string filename) {
     this->parseLinux();
 #endif
   }
-
 
   this->bufout->msg = (char*) std::malloc(sizeof(stderr_file_.c_str()));
   std::strcpy(this->bufout->msg, stderr_file_.c_str()); // hard copy
@@ -200,6 +205,7 @@ void Inter::parseMac() {
   }
   std::reverse(maxrss.begin(), maxrss.end());
 
+
   /* 3. get out file */
   std::string out = stdoe.substr(0, tend-exetime.size()-1); /* the stdout */
 
@@ -217,5 +223,68 @@ void Inter::parseMac() {
 };
 
 void Inter::parseLinux() {
+<<<<<<< HEAD
 
+=======
+  std::ifstream file(this->stderr_file_);
+  std::stringstream buffer;
+  buffer << file.rdbuf();
+
+  std::string stdoe = buffer.str();
+  std::string maxrss = "";
+  std::string exetime = "";
+
+  /* 1. get the max rss */
+  int end = stdoe.find(LINUXKEY);
+  if (end == std::string::npos ) {
+    return;
+  }
+
+  for (int i = end-3; i > 0; i--) {
+    char tmp = stdoe[i];
+    if (tmp >= 48 && tmp <= 57 || tmp == '.' || tmp == ':') {
+      /* is a digit */
+      maxrss += tmp;
+    } else {
+      break;
+    }
+  }
+
+  std::reverse(maxrss.begin(), maxrss.end());
+
+  /* 2. get the exec time */
+  int tend = stdoe.rfind(LINUXSHARE, end);
+  if (tend == std::string::npos) {
+    return;
+  }
+
+  for (int i = tend-3; i > 0; i--) {
+    char tmp = stdoe[i];
+    if (tmp >= 48 && tmp <= 57 || tmp == '.' || tmp == ':') {
+      /* is a digit */
+      exetime += tmp;
+    } else {
+      break;
+    }
+  }
+
+  std::reverse(exetime.begin(), exetime.end());
+
+  int endi = stdoe.find(LINUXBEG);
+
+  /* 3. get out file */
+  std::string out = stdoe.substr(0, endi-1); /* the stdout */
+
+  std::ofstream outfile;
+  outfile.open(this->stderr_file_);
+  outfile << out;
+  outfile.close();
+
+  out.clear();
+  stdoe.clear();
+  
+  (*this->runtime)[0] = "LINUX";
+  (*this->runtime)[1] = maxrss;
+  (*this->runtime)[2] = exetime;
+>>>>>>> e477cd274142a147aa0dadd6a22c80d8c78638da
 };
