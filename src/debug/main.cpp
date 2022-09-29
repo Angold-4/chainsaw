@@ -30,7 +30,7 @@ void consume(buffer* buf, Inter* inter, Editor* editor) {
 
 int main(int argc, char **argv) {
   if (argc != 2) {
-    std::cerr << "Usage: debug <filename>\n";
+    std::cerr << "Usage: chainsaw debug <question name>\n";
     exit(1);
   }
 

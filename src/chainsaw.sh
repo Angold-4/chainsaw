@@ -11,7 +11,7 @@
 ##  * macOS
 ## =================================================================
 
-VERSION="0.1.0"
+VERSION="0.5.0"
 COOKIES="~/Library/Chainsaw/cookie.txt"
 COUNT=0
 CSRF="null";
@@ -47,7 +47,7 @@ if [[ $# -eq 0 ]]; then
 	"
     
     echo ""
-    echo 'Chainsaw version 0.1.0 (Unix x86-64)'
+    echo 'Chainsaw version 0.5.0 (Unix x86-64)'
     echo '"chainsaw help" list all avaliable commands'
 fi
 
@@ -55,9 +55,10 @@ fi
 if [[ $# -eq 1 ]]; then
     case "$1" in
         version)
-	    echo "Chainsaw 0.2.0"
+	    echo "Chainsaw 0.5.0"
 	    echo "cf       ~/Library/Chainsaw/cf"
 	    echo "chainsaw /usr/local/bin/chainsaw"
+	    echo "csdebug  ~/Library/Chainsaw/csdebug"
 	    ;;
 	help)
 	    echo "These are common Chainsaw commands used in various situations:"
@@ -71,7 +72,7 @@ if [[ $# -eq 1 ]]; then
 	    echo ""
 	    echo "    gen         Generate problems and its testfile for specific contest"
 	    echo "    runsamples  Run all tests for specific problem"
-	    echo "    debug       Debug specific problem"
+	    echo "    debug       Debug specific problem with customized input"
 	    echo ""
 	    echo "    submit      Submit specific problem"
 	    echo ""
@@ -259,6 +260,12 @@ if [[ $# -eq 2 ]]; then
 	    ;;
 	*)
 	    echo "chainsaw: '$1' is not a chainsaw command. See 'chainsaw help'."
+	    ;;
+	debug)
+	    if [[ ! -e ~/debug ]]; then
+	      mkdir debug
+	    fi
+	    ~/Library/Chainsaw/csdebug ${2}
 	    ;;
     esac
 fi
