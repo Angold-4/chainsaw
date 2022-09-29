@@ -35,4 +35,16 @@ clang++ -std=c++17 src/cf.cpp -o ~/Library/Chainsaw/cf -l curl -pthread
 clang++ -std=c++17 src/parsesubmit.cpp -o ~/Library/Chainsaw/parsesubmit -l curl -pthread
 clang++ -std=c++17 src/parseuser.cpp -o ~/Library/Chainsaw/parseuser
 
+# Install debugger
+
+if [ "$1" == "mac" ]; then
+  clang++ -std=c++17 ./src/debug/main.cpp ./src/debug/debug.hpp ./src/debug/editor.cpp ./src/debug/inter.cpp -D MAC_OS
+  rm -rf ./src/debug/debug.hpp.gch
+  mv ./a.out ~/Library/Chainsaw/csdebug
+elif [ "$1" == "linux" ]; then
+  clang++ -std=c++17 ./src/debug/main.cpp ./src/debug/debug.hpp ./src/debug/editor.cpp ./src/debug/inter.cpp -D LINUX
+  rm -rf ./src/debug/debug.hpp.gch
+  mv ./a.out ~/Library/Chainsaw/csdebug
+fi
+
 sudo cp src/template.cpp ~/Library/Chainsaw/
