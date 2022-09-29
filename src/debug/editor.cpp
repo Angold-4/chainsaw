@@ -199,7 +199,6 @@ void Editor::RefreshScreen() {
     set_cursor(Conf, buf);
   }
 
-  // write(STDOUT_FILENO, buffer.c_str(), buffer.size()+1);
   write(STDOUT_FILENO, this->display_buffer.msg, this->display_buffer.len);
   displayFree();
 }
@@ -631,6 +630,7 @@ void Editor::MoveCursor(int key, editorConfig& Conf) {
   switch(key) {
     case ARROW_LEFT:
     case CTRL_H:
+      if (&Conf == &this->ConfOut) { break; }
       if (Conf.cx == 0) {  // end of the line
 	if (Conf.offcol) {
 	  Conf.offcol--;
@@ -650,6 +650,7 @@ void Editor::MoveCursor(int key, editorConfig& Conf) {
       break;
     case ARROW_RIGHT:
     case CTRL_L:
+      if (&Conf == &this->ConfOut) { break; }
       if (row && filecol < row->size) {
 	if (Conf.cx == Conf.lmtcol-1) { // cannot move
 	  Conf.offcol++;
@@ -825,5 +826,6 @@ void Editor::displayAppend(const char* s, int len) {
 };
 
 void Editor::displayFree() {
-  std::free(this->display_buffer.msg);
+  // std::free(this->display_buffer.msg);
+  delete [] this->display_buffer.msg;
 };

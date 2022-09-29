@@ -217,4 +217,5 @@ void Inter::parseMac() {
 };
 
 void Inter::parseLinux() {
+
 };
