@@ -157,10 +157,9 @@ std::string Chainsaw::new_parse_tests(std::string newpreblk) {
   while (true) {
     end_div = newpreblk.find("</div>", end_div+6);
     start = newpreblk.rfind("\">", end_div);
-    if (end_div + 7 > newpreblk.size()) break;
-
     ret += newpreblk.substr(start+2, end_div-start-2);
     ret += '\n';
+    if (end_div + 7 > newpreblk.size()) break;
   }
 
   return ret;
