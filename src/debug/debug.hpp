@@ -23,7 +23,7 @@
 */
 
 
-#define CHAINSAW_VERSION "0.5.0" 
+#define CHAINSAW_VERSION "0.6.0" 
 #define DEBUG_COMPILE "g++ -std=c++17 -Wshadow -Wall -O2 -D DEBUG "
 #define QUIT_TIMES 3
 
@@ -320,10 +320,10 @@ private:
 
     if (&Conf == &this->ConfOut) {
       buflen = snprintf(buf, sizeof(buf), "\033[%d;%dH", Conf.cy + this->Conf.lmtrow + 4, cx); // set the position of the cursor
-      SetStatusMessage("Cursor Out: %d, %d, offrow: %d", Conf.cy + this->Conf.lmtrow + 3, cx, Conf.offrow);
+      // SetStatusMessage("Cursor Out: %d, %d, offrow: %d", Conf.cy + this->Conf.lmtrow + 3, cx, Conf.offrow);
     } else { 
       buflen = snprintf(buf, sizeof(buf), "\x1b[%d;%dH", Conf.cy+1, cx); // set the position of the cursor
-      SetStatusMessage("Cursor: %d, %d, offrow: %d", Conf.cy, cx, Conf.offrow);
+      // SetStatusMessage("Cursor: %d, %d, offrow: %d", Conf.cy, cx, Conf.offrow);
     }
 
     displayAppend(buf, buflen);

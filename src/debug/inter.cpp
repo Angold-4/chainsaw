@@ -85,14 +85,15 @@ bool Inter::outexe(std::string filename) {
   std::remove(this->stdout_file_.c_str());
   std::remove(this->tmp_dir_.c_str());
 
-
   /* Execute */
 #ifdef MAC_OS
-  ret_code = shellExec("/usr/bin/time -l ./test");
+  std::string macexec = "/usr/bin/time -l ./test < debug/" + filename;
+  ret_code = shellExec(macexec.c_str());
 #endif
 
 #ifdef LINUX
-  ret_code = shellExec("/usr/bin/time -v ./test");
+  std::string linuxexec = "/usr/bin/time -v ./test < debug/" + filename;
+  ret_code = shellExec(linuxexec.c_str());
 #endif
 
   if (ret_code) {
@@ -108,9 +109,9 @@ bool Inter::outexe(std::string filename) {
 #endif
   }
 
-  this->bufout->msg = (char*) std::malloc(sizeof(stderr_file_.c_str()));
-  std::strcpy(this->bufout->msg, stderr_file_.c_str()); // hard copy
-  bufout->len = stderr_file_.size();
+  this->bufout->msg = (char*) std::malloc(sizeof(stdout_file_.c_str()));
+  std::strcpy(this->bufout->msg, stdout_file_.c_str()); // hard copy
+  bufout->len = stdout_file_.size();
   bufout->valid = true;
   bufout->type = BUFOUT;
   return true;
@@ -203,14 +204,14 @@ void Inter::parseMac() {
       break;
     }
   }
-  std::reverse(maxrss.begin(), maxrss.end());
 
+  std::reverse(exetime.begin(), exetime.end());
 
   /* 3. get out file */
   std::string out = stdoe.substr(0, tend-exetime.size()-1); /* the stdout */
 
   std::ofstream outfile;
-  outfile.open(this->stderr_file_);
+  outfile.open(this->stdout_file_, std::ios_base::app);
   outfile << out;
   outfile.close();
 
@@ -273,7 +274,7 @@ void Inter::parseLinux() {
   std::string out = stdoe.substr(0, endi-1); /* the stdout */
 
   std::ofstream outfile;
-  outfile.open(this->stderr_file_);
+  outfile.open(this->stdout_file_, std::ios_base::app);
   outfile << out;
   outfile.close();
 
