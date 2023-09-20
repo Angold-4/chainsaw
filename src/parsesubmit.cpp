@@ -36,9 +36,9 @@ int main(int argc, char* argv[]) {
     string shtml = statCurl->getData();
 
     if (shtml.find("WRONG_ANSWER") != string::npos) {
-	cout << "WRONG_ANSWER" << endl;
+	cout << "WRONG_ANSWER" << " ";
     } else {
-	cout << "OK" << endl;
+	cout << "OK" << " ";
     }
 
     // Make as clear as possible (the string isn't so long)

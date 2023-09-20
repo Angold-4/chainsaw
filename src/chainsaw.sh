@@ -47,7 +47,7 @@ if [[ $# -eq 0 ]]; then
 	"
     
     echo ""
-    echo 'Chainsaw version 0.5.0 (Unix x86-64)'
+    echo 'Chainsaw version 0.6.0 (Unix x86-64)'
     echo '"chainsaw help" list all avaliable commands'
 fi
 
@@ -55,7 +55,7 @@ fi
 if [[ $# -eq 1 ]]; then
     case "$1" in
         version)
-	    echo "Chainsaw 0.5.0"
+	    echo "Chainsaw 0.6.0"
 	    echo "cf       ~/Library/Chainsaw/cf"
 	    echo "chainsaw /usr/local/bin/chainsaw"
 	    echo "csdebug  ~/Library/Chainsaw/csdebug"
@@ -63,12 +63,13 @@ if [[ $# -eq 1 ]]; then
 	help)
 	    echo "These are common Chainsaw commands used in various situations:"
 	    echo ""
-	    echo "    clean       Remove all testfile"
+	    echo "    clean       Remove all testfiles"
 	    echo "    version     Check the chainsaw version"
 	    echo "    help        List all valid commands"
 	    echo "    login       Log into codeforces"
 	    echo "    logout      Log out account"
 	    echo "    check       Check your login status"
+	    echo "    result      Check your last submit result"
 	    echo ""
 	    echo "    gen         Generate problems and its testfile for specific contest"
 	    echo "    runsamples  Run all tests for specific problem"
@@ -127,6 +128,10 @@ if [[ $# -eq 1 ]]; then
 	    rm -f ~/Library/Chainsaw/cookie.txt
 	    echo -e "${GREEN}logout successful!${NC}"
 	    ;;
+
+	result)
+		echo `~/Library/Chainsaw/parsesubmit AngoldW`
+		;;
 
 	check)
 	    cf_response=$(curl --silent --cookie-jar ~/Library/Chainsaw/cookie.txt --cookie ~/Library/Chainsaw/cookie.txt 'https://codeforces.com/' 2>&1)
@@ -324,14 +329,15 @@ if [[ $# -eq 3 ]]; then
 
 	    echo -e "${GREEN}submit successful, now get the verdict...${NC}"
 
-	    sleep 2
+	    sleep 4
 
 	    # 4. check answer
 	    # name=$(~/Library/Chainsaw/substring 'AngoldW.html' 2>&1)
 	    # echo -e "${GREEN}${name}"
 
-            # return verdict, contestId, index, name, passedTestCount, timeConsumedMillis, memoryConsumedBytes
+        # return verdict, contestId, index, name, passedTestCount, timeConsumedMillis, memoryConsumedBytes
 	    read verdict contestId index name passedTestCount timeConsumedMillis memoryConsumedBytes <<< `~/Library/Chainsaw/parsesubmit ${user}`
+
 	    if [[ "${verdict}" == "WRONG_ANSWER" ]] 
 	    then
 		COLOR=${RED};
