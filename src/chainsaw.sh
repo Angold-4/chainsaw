@@ -11,10 +11,11 @@
 ##  * macOS
 ## =================================================================
 
-VERSION="0.5.0"
+VERSION="0.6.0"
 COOKIES="~/Library/Chainsaw/cookie.txt"
 COUNT=0
 CSRF="null";
+LOC=0
 
 SUCCESS=0;
 CONS=1
@@ -80,6 +81,8 @@ if [[ $# -eq 1 ]]; then
 	    ;;
 	clean)
 	    rm -rf sample
+			rm -rf debug
+			rm -rf *.out
 	    echo "clean finished!"
 	    ;;
 
@@ -177,12 +180,11 @@ if [[ $# -eq 2 ]]; then
 	    # 1. Create file and dir
 	    for np in `~/Library/Chainsaw/cf $2` 
 	    do
-		cp ~/Library/Chainsaw/template.cpp ${np}.cpp
+		cp ~/Library/Chainsaw/template.cpp $2_${np}.cpp
 		mkdir "sample/${np}"
 		PROBNAMES[COUNT]=$np
 		COUNT=`expr $COUNT + $CONS`
 	    done
-	    echo "Find $COUNT problems, now generating sample tests..."
 
 	    # 2. Write test file
 	    `~/Library/Chainsaw/cf $2 "${PROBNAMES[@]}"`
@@ -206,7 +208,7 @@ if [[ $# -eq 2 ]]; then
 		echo -e "${RED}chainsaw: Compile Error${NC}"
 		exit 1
 	    fi
-
+${NC}
 	    # Count number of tests
 	    ret=$(ls sample/$2/ | wc -l)
 	    ret=${ret: -1}
@@ -242,7 +244,7 @@ if [[ $# -eq 2 ]]; then
 		fi
 		echo ""
 		echo -e "${NC}Expected:"
-		echo -e "${NC}$ans"
+		echo -e "${NC}$ans${NC}"
 
 		echo ""
 		if [[ $out == $ans ]]
@@ -272,13 +274,58 @@ if [[ $# -eq 2 ]]; then
 	    ;;
 
 	*)
-	    echo "chainsaw: '$1' is not a chainsaw command. See 'chainsaw help'."
+	    echo "chainsaw: '$1' is not a chainsaw command or wrong arguments See 'chainsaw help'."
 	    ;;
     esac
 fi
 
 if [[ $# -eq 3 ]]; then
     case "$1" in
+	gen)
+		# gen #contest #problem
+		echo -e "============ ${YELLO}Cha${RED}in${BLUE}saw${NC}: A Codeforces Commandline Tool =============="
+		echo ""
+		echo "Generating all problems and sample tests for Contest $2..."
+		echo ""
+
+		if [[ ! -e ./sample ]]; then
+		  mkdir sample
+		fi
+
+		if [[ ! -e ./sample/$3 ]]; then
+		  mkdir sample/$3
+		fi
+		
+		# for program re-use and avoid major changes, I just use the "sample" directory to 
+		# store all the contest test samples (e.g. sample/A sample/B1, etc.)
+
+		`~/Library/Chainsaw/cf $2 $3 2> error.log`
+
+		if [[ -s error.log ]]; then
+				echo -e "${RED}Please check the question name or contest name, might be wrong.${NC}"
+				rm -f error.log
+				exit 1
+		else
+				echo -e "${GREEN}Find problem $3 of contest $2! Now generating...${NC}"
+				rm -f error.log
+		fi
+
+
+		if [[ -e $2_$3.cpp ]]; then
+			echo -e "${YELLO}File $2_$3.cpp already exists, updating sample tests...${NC}"
+		else
+			echo "Creating new file $2_$3.cpp..."
+			cp ~/Library/Chainsaw/template.cpp $2_$3.cpp
+		fi
+
+		echo ""
+		echo "Generating successfully!"
+		echo ""
+		echo "Run 'chainsaw runsamples question' to run the tests"
+		echo "But make sure to update the samples of question before you do that"
+		echo ""
+		echo '==================================================================='
+	;;
 	submit)
 	    # submit #contest #problem
 
@@ -353,7 +400,7 @@ if [[ $# -eq 3 ]]; then
 	    echo -e "${COLOR}Memory consumed byte(s): ${memoryConsumedBytes}"
 	    ;;
 	*)
-	    echo "chainsaw: "$1" is not a chainsaw command. See 'chainsaw help'."
+	    echo "chainsaw: "$1" is not a chainsaw command or argument missing. See 'chainsaw help'."
 	    ;;
     esac
 fi

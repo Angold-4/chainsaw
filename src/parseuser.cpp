@@ -13,34 +13,32 @@
 //
 //===----------------------------------------------------------------------===//
 
-
-#include <iostream>
-#include <string>
 #include <fstream>
+#include <iostream>
 #include <sstream>
+#include <string>
 
-using namespace::std;
+using namespace ::std;
 
-string readFileIntoString(const string& path) {
-    ifstream input_file(path.c_str());
-    if (!input_file.is_open()) {
-        cerr << "Could not open the file - '"
-             << path << "'" << endl;
-        exit(EXIT_FAILURE);
-    }
-    return string((std::istreambuf_iterator<char>(input_file)), std::istreambuf_iterator<char>());
+string readFileIntoString(const string &path) {
+  ifstream input_file(path.c_str());
+  if (!input_file.is_open()) {
+    cerr << "Could not open the file - '" << path << "'" << endl;
+    exit(EXIT_FAILURE);
+  }
+  return string((std::istreambuf_iterator<char>(input_file)),
+                std::istreambuf_iterator<char>());
 }
 
 int main() {
-    string filename = "/Users/Angold4/Library/Chainsaw/temp.txt"; // absolute path
+  string filename = "/Users/Angold4/Library/Chainsaw/temp.txt"; // absolute path
 
-    string html = readFileIntoString(filename);
+  string html = readFileIntoString(filename);
 
-    string userkey = "<li><a href=\"/blog/";
-    string endkey =  "\">Blog<";
+  string userkey = "<li><a href=\"/blog/";
+  string endkey = "\">Blog<";
 
-    int f = html.find(userkey) + 19;
-    int l = html.find(endkey);
-    cout << html.substr(f, l-f) << endl;
+  int f = html.find(userkey) + 19;
+  int l = html.find(endkey);
+  cout << html.substr(f, l - f) << endl;
 }
-
