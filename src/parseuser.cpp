@@ -20,6 +20,15 @@
 
 using namespace ::std;
 
+string getHomeDirectory() {
+  char *homeDir;
+  if ((homeDir = getenv("HOME")) == NULL) {
+    cerr << "Could not get HOME directory" << endl;
+    exit(EXIT_FAILURE);
+  }
+  return string(homeDir);
+}
+
 string readFileIntoString(const string &path) {
   ifstream input_file(path.c_str());
   if (!input_file.is_open()) {
@@ -31,7 +40,8 @@ string readFileIntoString(const string &path) {
 }
 
 int main() {
-  string filename = "/Users/Angold4/Library/Chainsaw/temp.txt"; // absolute path
+  string filename =
+      getHomeDirectory() + "/Library/Chainsaw/temp.txt"; // absolute path
 
   string html = readFileIntoString(filename);
 

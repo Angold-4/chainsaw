@@ -180,11 +180,13 @@ if [[ $# -eq 2 ]]; then
 	    # 1. Create file and dir
 	    for np in `~/Library/Chainsaw/cf $2` 
 	    do
-		cp ~/Library/Chainsaw/template.cpp $2_${np}.cpp
+		cp ~/Library/Chainsaw/template.cpp ${np}.cpp
 		mkdir "sample/${np}"
 		PROBNAMES[COUNT]=$np
 		COUNT=`expr $COUNT + $CONS`
 	    done
+
+			echo "Found ${COUNT} problems in contest ${2}!"
 
 	    # 2. Write test file
 	    `~/Library/Chainsaw/cf $2 "${PROBNAMES[@]}"`
@@ -292,9 +294,9 @@ if [[ $# -eq 3 ]]; then
 		  mkdir sample
 		fi
 
-		if [[ ! -e ./sample/$3 ]]; then
-		  mkdir sample/$3
-		fi
+		# clear the status
+		rm -rf sample/$3
+		mkdir sample/$3
 		
 		# for program re-use and avoid major changes, I just use the "sample" directory to 
 		# store all the contest test samples (e.g. sample/A sample/B1, etc.)
@@ -326,6 +328,7 @@ if [[ $# -eq 3 ]]; then
 		echo ""
 		echo '==================================================================='
 	;;
+
 	submit)
 	    # submit #contest #problem
 

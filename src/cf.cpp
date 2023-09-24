@@ -113,31 +113,73 @@ int Chainsaw::parseTests(std::string preblk, std::string prob) {
     spre = preblk.find("<pr", spre);
     if (spre == std::string::npos)
       break;
-    spre += 6;
+    spre += 5;
     epre = preblk.find("</pr", spre);
 
     if (spre < epre) {
+      // valid <pre> block
       ntests++;
       std::string test;
+      std::string blk = preblk.substr(spre, epre - spre);
       // ofstream never create dir
       if (isTest) {
         isTest = false;
+
         std::string blk = preblk.substr(spre, epre - spre);
+
+        // <pre> block
         test = "sample/" + prob + "/input" + std::to_string(ntests / 2 + 1) +
                ".txt";
-        if (this->test_cases_used(blk)) {
-          std::string ansblk = this->new_parse_tests(blk);
-          std::ofstream testfile(test.c_str());
-          testfile << ansblk;
-          continue;
-        }
+
       } else {
         isTest = true;
         test =
             "sample/" + prob + "/output" + std::to_string(ntests / 2) + ".txt";
       }
+
+      // for each key in replaced_map, check whether blk contains it
+      // and then replace it with the value
+      for (auto it = this->replaced_map.begin();
+           it != this->replaced_map.end(); ++it) {
+        if (blk.find(it->first) != std::string::npos) {
+          // replace all it->first with it->second
+          blk = replace(blk, it->first, it->second);
+        }
+      }
+
+      /*
+      if (blk.find("<br />") != std::string::npos) {
+        // replace all <br /> with \n
+        std::string replaced = replace(blk, "<br />", "\n");
+        std::ofstream testfile(test.c_str());
+        testfile << replaced;
+        continue;
+      }
+      */
+
+      if (this->test_cases_used(blk)) {
+        // updated test cases by codeforces (line-separated)
+        // <div class="test-example-line test-example-line-odd
+        // test-example-line-3" style="">BAABA</div>
+        std::string ansblk = this->new_parse_tests(blk);
+        std::ofstream testfile(test.c_str());
+
+        // DEBUG
+        // std::cout << ansblk << std::endl;
+
+        testfile << ansblk;
+        continue;
+      }
+
+      // need to re-check the <pre> block
       std::ofstream testfile(test.c_str());
-      testfile << preblk.substr(spre, epre - spre);
+      // if preblk[spre] == '\n' then spre += 1;
+      if (blk[0] == '\n')
+        blk = blk.substr(1, blk.size() - 1);
+
+      // DEBUG
+      // std::cout << blk << std::endl;
+      testfile << blk;
     } else {
       throw "parse Error";
     }
@@ -167,6 +209,16 @@ std::string Chainsaw::new_parse_tests(std::string newpreblk) {
   }
 
   return ret;
+}
+
+std::string Chainsaw::replace(std::string preblk, std::string oldstr,
+                              std::string newstr) {
+  size_t pos = 0;
+  while ((pos = preblk.find(oldstr, pos)) != std::string::npos) {
+    preblk.replace(pos, oldstr.length(), newstr);
+    pos += newstr.length();
+  }
+  return preblk;
 }
 
 /**

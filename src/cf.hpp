@@ -93,7 +93,11 @@ private:
   int ntestcase;
   int nprobcase;
   std::vector<std::string> probnames;
+  std::unordered_map<std::string, std::string> replaced_map = {
+      {"<br />", "\n"}, {"&lt;", "<"}, {"&gt;", ">"}, {"&amp;", "&"}};
 
   bool test_cases_used(std::string preblk);
   std::string new_parse_tests(std::string preblk);
+  std::string replace(std::string preblk, std::string oldstr,
+                      std::string newstr);
 };
