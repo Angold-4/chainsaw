@@ -329,6 +329,82 @@ if [[ $# -eq 3 ]]; then
 		echo '==================================================================='
 	;;
 
+	runsamples)
+		# runsamples #filename #problem
+	    echo ""
+	    echo "Compiling ${2}.cpp..."
+	    echo ""
+
+			# check whether there is a sample/$3 directory
+			if [[ ! -e ./sample/$3 ]]; then
+				echo -e "${RED}Please generate the sample tests first!${NC}"
+				exit 1
+			fi
+	    # Compile Program
+	    output=$(g++ -std=c++17 ${2} -o sample/$3/$3 2>&1)
+	    if [[ $? != 0 ]]; then
+		# There was an error, display the error in $output
+		echo -e "${RED}chainsaw: Compile Error${NC}"
+		exit 1
+	    fi
+
+	    # Count number of tests
+	    ret=$(ls sample/$3/ | wc -l)
+	    ret=${ret: -1}
+	    ret=`expr $ret - 1`
+	    number=`expr $ret / 2`
+	    green=`tput setaf 2`
+
+	    if [[ $number -eq 1 ]]
+	    then
+		echo "Run $number sample test of file $2..."
+	    else 
+		echo "Run $number sample tests of file $2..."
+	    fi
+
+	    for (( i=1; i <= $number; ++i )) {
+		out=$(sample/${3}/${3} < sample/${3}/input${i}.txt 2>&1)
+		in=$(cat sample/${3}/input${i}.txt 2>&1)
+		ans=$(cat sample/${3}/output${i}.txt 2>&1)
+
+		echo -e "${YELLO}TestCase: ${i}/${number} ---------------------------------"
+
+		echo -e "${NC}Input:"
+		echo -e "${NC}${in}"
+		echo ""
+		if [[ $out == $ans ]]
+		then
+		    SUCCESS=`expr $SUCCESS + $CONS`
+		    echo -e "${GREEN}Output:"
+		    echo -e "${GREEN}$out"
+		else
+		    echo -e "${RED}Output:"
+		    echo -e "${RED}$out"
+		fi
+		echo ""
+		echo -e "${NC}Expected:"
+		echo -e "${NC}$ans${NC}"
+
+		echo ""
+		if [[ $out == $ans ]]
+		then
+		    echo -e "${GREEN}Correct"
+		else 
+		    echo -e "${RED}Incorrect"
+		fi
+	    }
+	    
+	    echo ""
+	    if [[ $SUCCESS == $number ]]
+	    then
+		echo -e "${GREEN}Summary: ---------------------------------------------"
+		echo -e "${GREEN} All ${SUCCESS}/${number} Passed!"
+	    else
+		echo -e "${RED}Summary: ---------------------------------------------"
+		echo -e "${RED} ${SUCCESS}/${number} test(s) passed."
+	    fi
+	    ;;
+
 	submit)
 	    # submit #contest #problem
 
@@ -353,6 +429,88 @@ if [[ $# -eq 3 ]]; then
 	    con=$2
 	    problem=$3
 	    file="${problem}.cpp"
+	    language='54' # cpp 17 default TODO: Add friendly user config interface
+
+	    # 2. get the submit page (get csrf_token)
+	    cf_response=$(curl --silent --cookie-jar ~/Library/Chainsaw/cookie.txt --cookie ~/Library/Chainsaw/cookie.txt "https://codeforces.com/contest/${con}/submit" 2>&1)
+
+	    keysearch="value=\'" # TODO Maybe slow
+	    rest=${cf_response#*$keysearch} # the part of cf_response after keysearch
+
+	    CSRF=${cf_response:${#cf_response} - ${#rest}:32} # get the csrf token
+
+	    # echo "${CSRF}"
+
+	    # 3. submit file
+	    cf_response=`curl --location --silent --cookie-jar ~/Library/Chainsaw/cookie.txt --cookie ~/Library/Chainsaw/cookie.txt -F "csrf_token=${CSRF}" -F "action=submitSolutionFormSubmitted" -F "submittedProblemIndex=${problem}" -F "programTypeId=${language}" -F "source=@${file}" "https://codeforces.com/contest/${con}/submit?csrf_token=${CSRF}"`
+
+
+	    if [[ "${cf_response}" ==  *"You have submitted exactly the same code before"* ]]
+	    then
+		echo -e "chainsaw: ${RED}submit failed, because you have submitted exactly the same code before${NC}"
+		exit 1
+	    fi
+
+	    # echo "${cf_response}" > submit.html
+
+	    echo -e "${GREEN}submit successful, now get the verdict...${NC}"
+
+	    sleep 4
+
+	    # 4. check answer
+	    # name=$(~/Library/Chainsaw/substring 'AngoldW.html' 2>&1)
+	    # echo -e "${GREEN}${name}"
+
+        # return verdict, contestId, index, name, passedTestCount, timeConsumedMillis, memoryConsumedBytes
+	    read verdict contestId index name passedTestCount timeConsumedMillis memoryConsumedBytes <<< `~/Library/Chainsaw/parsesubmit ${user}`
+
+	    if [[ "${verdict}" == "WRONG_ANSWER" ]] 
+	    then
+		COLOR=${RED};
+	    else
+		COLOR=${GREEN};
+	    fi
+
+	    echo ""
+	    echo -e "${COLOR}${contestId}${index} ${name}"
+	    echo -e "${COLOR}${verdict}"
+	    echo -e "${COLOR}Number of passed test(s): ${passedTestCount}"
+	    echo -e "${COLOR}Time consumed Mill(s): ${timeConsumedMillis}"
+	    echo -e "${COLOR}Memory consumed byte(s): ${memoryConsumedBytes}"
+	    ;;
+
+	*)
+	    echo "chainsaw: '$1' is not a chainsaw command or wrong arguments See 'chainsaw help'."
+	    ;;
+    esac
+fi
+
+	if [[ $# -eq 4 ]]; then
+    case "$1" in
+	submit)
+			# submit #contest #problem #filename
+
+	    # very similar to login
+
+	    # 1. check whether login
+	    cf_response=$(curl --silent --cookie-jar ~/Library/Chainsaw/cookie.txt --cookie ~/Library/Chainsaw/cookie.txt 'https://codeforces.com/' 2>&1)
+	    if [[ ${cf_response} != *"Logout"* ]];
+	    then
+		echo -e "chainsaw: ${RED}please login first${NC}"
+		echo -e "run 'chainsaw login' to log in your account"
+		exit 1
+	    fi
+
+	    echo ${cf_response} > ~/Library/Chainsaw/temp.txt
+	    user=$(~/Library/Chainsaw/parseuser)
+	    echo -e "${YELLO}${user} submiting problem $3 of contest $2 ...${NC}"
+	    # echo ${user}
+
+	    rm -f ~/Library/Chainsaw/temp.txt
+
+	    con=$2
+	    problem=$3
+	    file="$4"
 	    language='54' # cpp 17 default TODO: Add friendly user config interface
 
 	    # 2. get the submit page (get csrf_token)

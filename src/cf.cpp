@@ -139,8 +139,8 @@ int Chainsaw::parseTests(std::string preblk, std::string prob) {
 
       // for each key in replaced_map, check whether blk contains it
       // and then replace it with the value
-      for (auto it = this->replaced_map.begin();
-           it != this->replaced_map.end(); ++it) {
+      for (auto it = this->replaced_map.begin(); it != this->replaced_map.end();
+           ++it) {
         if (blk.find(it->first) != std::string::npos) {
           // replace all it->first with it->second
           blk = replace(blk, it->first, it->second);
