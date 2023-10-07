@@ -11,8 +11,8 @@
 ##  * macOS
 ## =================================================================
 
-VERSION="0.6.0"
-COOKIES="~/Library/Chainsaw/cookie.txt"
+VERSION="0.8.0"
+COOKIES="~/.chainsaw/cookie.txt"
 COUNT=0
 CSRF="null";
 LOC=0
@@ -48,7 +48,7 @@ if [[ $# -eq 0 ]]; then
 	"
     
     echo ""
-    echo 'Chainsaw version 0.6.0 (Unix x86-64)'
+    echo 'Chainsaw version 0.8.0 (Unix x86-64)'
     echo '"chainsaw help" list all avaliable commands'
 fi
 
@@ -56,10 +56,10 @@ fi
 if [[ $# -eq 1 ]]; then
     case "$1" in
         version)
-	    echo "Chainsaw 0.6.0"
-	    echo "cf       ~/Library/Chainsaw/cf"
+	    echo "Chainsaw 0.8.0"
+	    echo "cf       ~/.chainsaw/cf"
 	    echo "chainsaw /usr/local/bin/chainsaw"
-	    echo "csdebug  ~/Library/Chainsaw/csdebug"
+	    echo "csdebug  ~/.chainsaw/csdebug"
 	    ;;
 	help)
 	    echo "These are common Chainsaw commands used in various situations:"
@@ -74,7 +74,7 @@ if [[ $# -eq 1 ]]; then
 	    echo ""
 	    echo "    gen         Generate problems and its testfile for specific contest"
 	    echo "    runsamples  Run all tests for specific problem"
-	    echo "    debug       Debug specific problem with customized input"
+      echo "    debug       Debug specific problem with customized input (DEPRECATED)"
 	    echo ""
 	    echo "    submit      Submit specific problem"
 	    echo ""
@@ -89,9 +89,9 @@ if [[ $# -eq 1 ]]; then
 	login)
 	    # enter test logic first
 	    read -p "username: " username
-	    read -p "password: " password
+	    read -s -p "password: " password
 
-	    cf_response=`curl --silent --cookie-jar ~/Library/Chainsaw/cookie.txt 'https://codeforces.com/enter'`
+	    cf_response=`curl --silent --cookie-jar ~/.chainsaw/cookie.txt 'https://codeforces.com/enter'`
 	    # output=$(g++ -std=c++17 ${2}.cpp -o sample/$2/$2 2>&1)
 	    keysearch="value=\'" # TODO Maybe slow
 	    rest=${cf_response#*$keysearch} # the part of cf_response after keysearch
@@ -110,7 +110,7 @@ if [[ $# -eq 1 ]]; then
 	    # 'https://codeforces.com/enter' 2>&1)
 
 	    # send login form 
-	    cf_response=$(curl --location --silent --cookie-jar ~/Library/Chainsaw/cookie.txt --cookie ~/Library/Chainsaw/cookie.txt --data "action=enter&handleOrEmail=${username}&remember=1&csrf_token=${CSRF}&password=${password}" 'https://codeforces.com/enter/' 2>&1)
+	    cf_response=$(curl --location --silent --cookie-jar ~/.chainsaw/cookie.txt --cookie ~/.chainsaw/cookie.txt --data "action=enter&handleOrEmail=${username}&remember=1&csrf_token=${CSRF}&password=${password}" 'https://codeforces.com/enter/' 2>&1)
 
 	    if [[ ${cf_response} == *"Logout"* ]];
 	    then
@@ -119,7 +119,7 @@ if [[ $# -eq 1 ]]; then
 		echo -e "chainsaw: ${RED}wrong username/password${NC}"
 	    fi
 	    # HttpOnly_codeforces.com	FALSE	/	FALSE	0	JSESSIONID	75EE738CE75CF23750E04FA856B25475-n1
-	    # cf_response=$(curl --silent --cookie-jar ~/Library/Chainsaw/cookie.txt --cookie ~/Library/Chainsaw/cookie.txt 'https://codeforces.com/' 2>&1)
+	    # cf_response=$(curl --silent --cookie-jar ~/.chainsaw/cookie.txt --cookie ~/.chainsaw/cookie.txt 'https://codeforces.com/' 2>&1)
 
 	    # echo "${cf_response}" > AngoldW.html
 
@@ -128,22 +128,22 @@ if [[ $# -eq 1 ]]; then
 	    ;;
 
 	logout)
-	    rm -f ~/Library/Chainsaw/cookie.txt
+	    rm -f ~/.chainsaw/cookie.txt
 	    echo -e "${GREEN}logout successful!${NC}"
 	    ;;
 
 	result)
-		echo `~/Library/Chainsaw/parsesubmit AngoldW`
+		echo `~/.chainsaw/parsesubmit AngoldW`
 		;;
 
 	check)
-	    cf_response=$(curl --silent --cookie-jar ~/Library/Chainsaw/cookie.txt --cookie ~/Library/Chainsaw/cookie.txt 'https://codeforces.com/' 2>&1)
+	    cf_response=$(curl --silent --cookie-jar ~/.chainsaw/cookie.txt --cookie ~/.chainsaw/cookie.txt 'https://codeforces.com/' 2>&1)
 	    # userkey="<li><a href=\"/blog/"
 	    # endkey=">Blog<"
 	    # echo $cf_response > login.html
 	    if [[ ${cf_response} == *"Logout"* ]];
 	    then
-		echo ${cf_response} > ~/Library/Chainsaw/temp.txt
+		echo ${cf_response} > ~/.chainsaw/temp.txt
 		# find username
 		# namearea=${cf_response#*$userkey}
 		# endarea=${cf_response#*$endkey}
@@ -152,9 +152,9 @@ if [[ $# -eq 1 ]]; then
 		# namelen=$(expr ${namel} - ${endl})
 		# namelen=$(expr ${namelen} - 7)
 		# echo -e "${GREEN}login as ${cf_response:(${#cf_response} - ${namel}):$namelen}${NC}"
-		name=$(~/Library/Chainsaw/parseuser)
+		name=$(~/.chainsaw/parseuser)
 		echo -e "${GREEN}log in as ${name}${NC}"
-		rm -f ~/Library/Chainsaw/temp.txt
+		rm -f ~/.chainsaw/temp.txt
 
 	    else
 		echo -e "chainsaw: ${RED}please login first${NC}"
@@ -178,9 +178,9 @@ if [[ $# -eq 2 ]]; then
 
 	    mkdir "sample"
 	    # 1. Create file and dir
-	    for np in `~/Library/Chainsaw/cf $2` 
+	    for np in `~/.chainsaw/cf $2` 
 	    do
-		cp ~/Library/Chainsaw/template.cpp ${np}.cpp
+		cp ~/.chainsaw/template.cpp ${np}.cpp
 		mkdir "sample/${np}"
 		PROBNAMES[COUNT]=$np
 		COUNT=`expr $COUNT + $CONS`
@@ -189,7 +189,7 @@ if [[ $# -eq 2 ]]; then
 			echo "Found ${COUNT} problems in contest ${2}!"
 
 	    # 2. Write test file
-	    `~/Library/Chainsaw/cf $2 "${PROBNAMES[@]}"`
+	    `~/.chainsaw/cf $2 "${PROBNAMES[@]}"`
 
 	    echo ""
 	    echo "Generating successfully!"
@@ -272,7 +272,7 @@ ${NC}
 	    if [[ ! -e ~/debug ]]; then
 	      mkdir debug
 	    fi
-	    ~/Library/Chainsaw/csdebug ${2}
+	    ~/.chainsaw/csdebug ${2}
 	    ;;
 
 	*)
@@ -301,7 +301,7 @@ if [[ $# -eq 3 ]]; then
 		# for program re-use and avoid major changes, I just use the "sample" directory to 
 		# store all the contest test samples (e.g. sample/A sample/B1, etc.)
 
-		`~/Library/Chainsaw/cf $2 $3 2> error.log`
+		`~/.chainsaw/cf $2 $3 2> error.log`
 
 		if [[ -s error.log ]]; then
 				echo -e "${RED}Please check the question name or contest name, might be wrong.${NC}"
@@ -317,7 +317,7 @@ if [[ $# -eq 3 ]]; then
 			echo -e "${YELLO}File $2_$3.cpp already exists, updating sample tests...${NC}"
 		else
 			echo "Creating new file $2_$3.cpp..."
-			cp ~/Library/Chainsaw/template.cpp $2_$3.cpp
+			cp ~/.chainsaw/template.cpp $2_$3.cpp
 		fi
 
 		echo ""
@@ -411,7 +411,7 @@ if [[ $# -eq 3 ]]; then
 	    # very similar to login
 
 	    # 1. check whether login
-	    cf_response=$(curl --silent --cookie-jar ~/Library/Chainsaw/cookie.txt --cookie ~/Library/Chainsaw/cookie.txt 'https://codeforces.com/' 2>&1)
+	    cf_response=$(curl --silent --cookie-jar ~/.chainsaw/cookie.txt --cookie ~/.chainsaw/cookie.txt 'https://codeforces.com/' 2>&1)
 	    if [[ ${cf_response} != *"Logout"* ]];
 	    then
 		echo -e "chainsaw: ${RED}please login first${NC}"
@@ -419,12 +419,12 @@ if [[ $# -eq 3 ]]; then
 		exit 1
 	    fi
 
-	    echo ${cf_response} > ~/Library/Chainsaw/temp.txt
-	    user=$(~/Library/Chainsaw/parseuser)
+	    echo ${cf_response} > ~/.chainsaw/temp.txt
+	    user=$(~/.chainsaw/parseuser)
 	    echo -e "${YELLO}${user} submiting problem $3 of contest $2 ...${NC}"
 	    # echo ${user}
 
-	    rm -f ~/Library/Chainsaw/temp.txt
+	    rm -f ~/.chainsaw/temp.txt
 
 	    con=$2
 	    problem=$3
@@ -432,7 +432,7 @@ if [[ $# -eq 3 ]]; then
 	    language='54' # cpp 17 default TODO: Add friendly user config interface
 
 	    # 2. get the submit page (get csrf_token)
-	    cf_response=$(curl --silent --cookie-jar ~/Library/Chainsaw/cookie.txt --cookie ~/Library/Chainsaw/cookie.txt "https://codeforces.com/contest/${con}/submit" 2>&1)
+	    cf_response=$(curl --silent --cookie-jar ~/.chainsaw/cookie.txt --cookie ~/.chainsaw/cookie.txt "https://codeforces.com/contest/${con}/submit" 2>&1)
 
 	    keysearch="value=\'" # TODO Maybe slow
 	    rest=${cf_response#*$keysearch} # the part of cf_response after keysearch
@@ -442,7 +442,7 @@ if [[ $# -eq 3 ]]; then
 	    # echo "${CSRF}"
 
 	    # 3. submit file
-	    cf_response=`curl --location --silent --cookie-jar ~/Library/Chainsaw/cookie.txt --cookie ~/Library/Chainsaw/cookie.txt -F "csrf_token=${CSRF}" -F "action=submitSolutionFormSubmitted" -F "submittedProblemIndex=${problem}" -F "programTypeId=${language}" -F "source=@${file}" "https://codeforces.com/contest/${con}/submit?csrf_token=${CSRF}"`
+	    cf_response=`curl --location --silent --cookie-jar ~/.chainsaw/cookie.txt --cookie ~/.chainsaw/cookie.txt -F "csrf_token=${CSRF}" -F "action=submitSolutionFormSubmitted" -F "submittedProblemIndex=${problem}" -F "programTypeId=${language}" -F "source=@${file}" "https://codeforces.com/contest/${con}/submit?csrf_token=${CSRF}"`
 
 
 	    if [[ "${cf_response}" ==  *"You have submitted exactly the same code before"* ]]
@@ -458,11 +458,11 @@ if [[ $# -eq 3 ]]; then
 	    sleep 4
 
 	    # 4. check answer
-	    # name=$(~/Library/Chainsaw/substring 'AngoldW.html' 2>&1)
+	    # name=$(~/.chainsaw/substring 'AngoldW.html' 2>&1)
 	    # echo -e "${GREEN}${name}"
 
         # return verdict, contestId, index, name, passedTestCount, timeConsumedMillis, memoryConsumedBytes
-	    read verdict contestId index name passedTestCount timeConsumedMillis memoryConsumedBytes <<< `~/Library/Chainsaw/parsesubmit ${user}`
+	    read verdict contestId index name passedTestCount timeConsumedMillis memoryConsumedBytes <<< `~/.chainsaw/parsesubmit ${user}`
 
 	    if [[ "${verdict}" == "WRONG_ANSWER" ]] 
 	    then
@@ -493,7 +493,7 @@ fi
 	    # very similar to login
 
 	    # 1. check whether login
-	    cf_response=$(curl --silent --cookie-jar ~/Library/Chainsaw/cookie.txt --cookie ~/Library/Chainsaw/cookie.txt 'https://codeforces.com/' 2>&1)
+	    cf_response=$(curl --silent --cookie-jar ~/.chainsaw/cookie.txt --cookie ~/.chainsaw/cookie.txt 'https://codeforces.com/' 2>&1)
 	    if [[ ${cf_response} != *"Logout"* ]];
 	    then
 		echo -e "chainsaw: ${RED}please login first${NC}"
@@ -501,12 +501,12 @@ fi
 		exit 1
 	    fi
 
-	    echo ${cf_response} > ~/Library/Chainsaw/temp.txt
-	    user=$(~/Library/Chainsaw/parseuser)
+	    echo ${cf_response} > ~/.chainsaw/temp.txt
+	    user=$(~/.chainsaw/parseuser)
 	    echo -e "${YELLO}${user} submiting problem $3 of contest $2 ...${NC}"
 	    # echo ${user}
 
-	    rm -f ~/Library/Chainsaw/temp.txt
+	    rm -f ~/.chainsaw/temp.txt
 
 	    con=$2
 	    problem=$3
@@ -514,7 +514,7 @@ fi
 	    language='54' # cpp 17 default TODO: Add friendly user config interface
 
 	    # 2. get the submit page (get csrf_token)
-	    cf_response=$(curl --silent --cookie-jar ~/Library/Chainsaw/cookie.txt --cookie ~/Library/Chainsaw/cookie.txt "https://codeforces.com/contest/${con}/submit" 2>&1)
+	    cf_response=$(curl --silent --cookie-jar ~/.chainsaw/cookie.txt --cookie ~/.chainsaw/cookie.txt "https://codeforces.com/contest/${con}/submit" 2>&1)
 
 	    keysearch="value=\'" # TODO Maybe slow
 	    rest=${cf_response#*$keysearch} # the part of cf_response after keysearch
@@ -524,7 +524,7 @@ fi
 	    # echo "${CSRF}"
 
 	    # 3. submit file
-	    cf_response=`curl --location --silent --cookie-jar ~/Library/Chainsaw/cookie.txt --cookie ~/Library/Chainsaw/cookie.txt -F "csrf_token=${CSRF}" -F "action=submitSolutionFormSubmitted" -F "submittedProblemIndex=${problem}" -F "programTypeId=${language}" -F "source=@${file}" "https://codeforces.com/contest/${con}/submit?csrf_token=${CSRF}"`
+	    cf_response=`curl --location --silent --cookie-jar ~/.chainsaw/cookie.txt --cookie ~/.chainsaw/cookie.txt -F "csrf_token=${CSRF}" -F "action=submitSolutionFormSubmitted" -F "submittedProblemIndex=${problem}" -F "programTypeId=${language}" -F "source=@${file}" "https://codeforces.com/contest/${con}/submit?csrf_token=${CSRF}"`
 
 
 	    if [[ "${cf_response}" ==  *"You have submitted exactly the same code before"* ]]
@@ -540,11 +540,11 @@ fi
 	    sleep 4
 
 	    # 4. check answer
-	    # name=$(~/Library/Chainsaw/substring 'AngoldW.html' 2>&1)
+	    # name=$(~/.chainsaw/substring 'AngoldW.html' 2>&1)
 	    # echo -e "${GREEN}${name}"
 
         # return verdict, contestId, index, name, passedTestCount, timeConsumedMillis, memoryConsumedBytes
-	    read verdict contestId index name passedTestCount timeConsumedMillis memoryConsumedBytes <<< `~/Library/Chainsaw/parsesubmit ${user}`
+	    read verdict contestId index name passedTestCount timeConsumedMillis memoryConsumedBytes <<< `~/.chainsaw/parsesubmit ${user}`
 
 	    if [[ "${verdict}" == "WRONG_ANSWER" ]] 
 	    then

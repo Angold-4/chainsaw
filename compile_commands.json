@@ -1,0 +1,32 @@
+[
+{
+  "directory": "/Users/angold/Projects/chainsaw/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++    -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.0.sdk -std=gnu++17 -o CMakeFiles/cf.dir/src/cf.cpp.o -c /Users/angold/Projects/chainsaw/src/cf.cpp",
+  "file": "/Users/angold/Projects/chainsaw/src/cf.cpp"
+},
+{
+  "directory": "/Users/angold/Projects/chainsaw/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++    -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.0.sdk -std=gnu++17 -o CMakeFiles/parsesubmit.dir/src/parsesubmit.cpp.o -c /Users/angold/Projects/chainsaw/src/parsesubmit.cpp",
+  "file": "/Users/angold/Projects/chainsaw/src/parsesubmit.cpp"
+},
+{
+  "directory": "/Users/angold/Projects/chainsaw/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++    -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.0.sdk -std=gnu++17 -o CMakeFiles/parseuser.dir/src/parseuser.cpp.o -c /Users/angold/Projects/chainsaw/src/parseuser.cpp",
+  "file": "/Users/angold/Projects/chainsaw/src/parseuser.cpp"
+},
+{
+  "directory": "/Users/angold/Projects/chainsaw/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DMAC_OS   -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.0.sdk -std=gnu++17 -o CMakeFiles/csdebug.dir/src/debug/main.cpp.o -c /Users/angold/Projects/chainsaw/src/debug/main.cpp",
+  "file": "/Users/angold/Projects/chainsaw/src/debug/main.cpp"
+},
+{
+  "directory": "/Users/angold/Projects/chainsaw/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DMAC_OS   -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.0.sdk -std=gnu++17 -o CMakeFiles/csdebug.dir/src/debug/editor.cpp.o -c /Users/angold/Projects/chainsaw/src/debug/editor.cpp",
+  "file": "/Users/angold/Projects/chainsaw/src/debug/editor.cpp"
+},
+{
+  "directory": "/Users/angold/Projects/chainsaw/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++ -DMAC_OS   -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.0.sdk -std=gnu++17 -o CMakeFiles/csdebug.dir/src/debug/inter.cpp.o -c /Users/angold/Projects/chainsaw/src/debug/inter.cpp",
+  "file": "/Users/angold/Projects/chainsaw/src/debug/inter.cpp"
+}
+]

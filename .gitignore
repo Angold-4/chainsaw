@@ -24,3 +24,9 @@ ph
 barrier
 /lab-*.json
 .DS_Store
+/build/
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+*.cmake

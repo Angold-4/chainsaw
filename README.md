@@ -16,24 +16,19 @@ The first phase and third phase are just repetitive copy and paste work, but it 
 
 chainsaw is written in C++17, so if you want to install chainsaw on your machine. you need a very recent version of GCC or Clang. I'm using macOS Monterey 12.1 as a development platform, I'm also testing that in Ubuntu 20.04 LTS, it can also install successfully. In that two environment, you can install chainsaw by the following commands:
 
-#### Ubuntu 20.04 and later 
 
 ```shell
 git clone https://github.com/Angold-4/chainsaw.git
 
 cd chainsaw
 
-./install.sh linux
-```
+mkdir build
 
-#### macOS Monterey 12.1 and later
+cd build
 
-```shell
-git clone https://github.com/Angold-4/chainsaw.git
+cmake ..
 
-cd chainsaw
-
-./install.sh mac
+sudo make install
 ```
 
 If no error reported, then restart your shell, now you can run chainsaw on your command line.

@@ -41,7 +41,7 @@ string readFileIntoString(const string &path) {
 
 int main() {
   string filename =
-      getHomeDirectory() + "/Library/Chainsaw/temp.txt"; // absolute path
+      getHomeDirectory() + "/.chainsaw/temp.txt"; // absolute path
 
   string html = readFileIntoString(filename);
 
