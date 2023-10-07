@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10) # Ensure we're using at least CMake 3.10
+cmake_minimum_required(VERSION 3.10) 
 
 project(Chainsaw)
 
@@ -33,9 +33,13 @@ add_custom_target(copy_template ALL
     DEPENDS ${CMAKE_SOURCE_DIR}/src/template.cpp
 )
 
+# Set the output directory for the binaries
+set_target_properties(cf parsesubmit parseuser csdebug
+    PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_DIR}
+)
+
+# Install the chainsaw script
 install(PROGRAMS src/chainsaw.sh 
         DESTINATION /usr/local/bin/ 
         RENAME chainsaw)
-
-install(TARGETS cf parsesubmit parseuser csdebug 
-        RUNTIME DESTINATION ${OUTPUT_DIR})
